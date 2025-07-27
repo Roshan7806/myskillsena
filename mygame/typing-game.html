@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="status-checker.js"></script>
-<script>
-  checkGameAccess("typing");
-</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Typing Game - SkillSena</title>
+
+  <!-- Style -->
   <style>
     body {
       margin: 0;
@@ -15,7 +13,6 @@
       background: linear-gradient(to right, #8360c3, #2ebf91);
       color: #fff;
     }
-
     .top-bar {
       padding: 12px 20px;
       background: rgba(0, 0, 0, 0.2);
@@ -23,7 +20,6 @@
       justify-content: space-between;
       font-size: 16px;
     }
-
     .container {
       display: flex;
       justify-content: center;
@@ -31,7 +27,6 @@
       min-height: 90vh;
       padding: 20px;
     }
-
     .game-box {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(8px);
@@ -42,18 +37,15 @@
       max-width: 380px;
       box-shadow: 0 0 20px rgba(0,0,0,0.2);
     }
-
     .game-box h2 {
       margin-bottom: 20px;
       font-size: 24px;
     }
-
     label {
       display: block;
       font-size: 16px;
       margin-bottom: 10px;
     }
-
     select {
       width: 100%;
       padding: 12px;
@@ -62,7 +54,6 @@
       border: none;
       color: #333;
     }
-
     button {
       width: 100%;
       margin-top: 20px;
@@ -75,29 +66,79 @@
       color: #000;
       cursor: pointer;
     }
-
     button:hover {
       background: #e6b800;
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let userId = sessionStorage.getItem("userId");
+    let userData = null;
+
+    window.onload = function () {
+      if (!userId) {
+        alert("Please login first.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Get user data from Firebase
+      firebase.database().ref("users/" + userId).once("value").then(snapshot => {
+        if (snapshot.exists()) {
+          userData = snapshot.val();
+          document.getElementById("username").textContent = userData.name;
+          document.getElementById("balance").textContent = userData.balance;
+        } else {
+          alert("User not found.");
+          window.location.href = "login.html";
+        }
+      });
+    };
+
+    function startTypingGame() {
+      const bet = parseInt(document.getElementById("bet").value);
+
+      if (!userData) {
+        alert("Please login first.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      if (userData.balance < bet) {
+        alert("❌ Not enough coins to play!");
+        return;
+      }
+
+      // Deduct balance and update in Firebase
+      userData.balance -= bet;
+      firebase.database().ref("users/" + userId).update({
+        balance: userData.balance
+      });
+
+      // Save bet to session for gameplay
+      sessionStorage.setItem("typing_bet", bet);
+
+      // Go to gameplay
+      window.location.href = "play-typing-game.html";
+    }
+  </script>
 </head>
 <body>
 
@@ -123,35 +164,6 @@
       <button onclick="startTypingGame()">🚀 Start Game</button>
     </div>
   </div>
-
-  <script>
-    const mobile = // localStorage removed - replaced by FirebasegetItem("loggedInUser");
-    const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
-
-    if (!mobile || !user) {
-      alert("Please login first.");
-      window.location.href = "login.html";
-    } else {
-      document.getElementById("username").textContent = user.name;
-      document.getElementById("balance").textContent = user.balance;
-    }
-
-    function startTypingGame() {
-      const bet = parseInt(document.getElementById("bet").value);
-      if (user.balance < bet) {
-        alert("❌ Not enough coins to play!");
-        return;
-      }
-
-      // Deduct coins and save current bet
-      user.balance -= bet;
-      // localStorage removed - replaced by FirebasesetItem("user_" + mobile, JSON.stringify(user));
-      // localStorage removed - replaced by FirebasesetItem("typing_bet", bet);
-
-      // Move to game play page
-      window.location.href = "play-typing-game.html";
-    }
-  </script>
 
 </body>
 </html>
