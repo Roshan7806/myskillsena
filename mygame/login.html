@@ -41,9 +41,19 @@
       cursor: pointer;
       font-weight: bold;
       width: 100%;
+      margin-top: 10px;
     }
     button:hover {
       background: #e6b800;
+    }
+    .extra-links {
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .extra-links a {
+      color: #fff;
+      text-decoration: underline;
+      cursor: pointer;
     }
   </style>
 
@@ -70,6 +80,11 @@
     <input type="text" id="mobile" placeholder="📱 Mobile Number" />
     <input type="password" id="password" placeholder="🔒 Password" />
     <button onclick="loginUser()">🔓 Login</button>
+
+    <div class="extra-links">
+      <p>Not Registered? <a onclick="window.location.href='register.html'">Register Now</a></p>
+      <p><a onclick="window.location.href='forgot-password.html'">Forgot Password?</a></p>
+    </div>
   </div>
 
   <script>
@@ -100,7 +115,7 @@
           // ✅ Store login session
           localStorage.setItem("loggedInUser", mobile);
           localStorage.setItem("userId", userData.userId || "");
-          sessionStorage.setItem("mobile", mobile); // ✅ VERY IMPORTANT
+          sessionStorage.setItem("mobile", mobile); // ✅
 
           alert("✅ Login successful!");
           window.location.href = "dashboard.html";
