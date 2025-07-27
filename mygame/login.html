@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Login - SKILLSENA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       background: linear-gradient(135deg, #f6f9fc, #e0f7fa);
@@ -68,56 +69,45 @@
     }
   </style>
 
-  <!-- Firebase Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <!-- ✅ Firebase Scripts (compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
   <script>
+    // ✅ Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
       databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
       projectId: "apnaskillsena",
-      storageBucket: "apnaskillsena.firebasestorage.app",
+      storageBucket: "apnaskillsena.appspot.com",
       messagingSenderId: "149529300642",
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
+    // ✅ Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-  </script>
-</head>
-<body>
-  <div class="form-container">
-    <img src="skillsena.png" alt="Skillsena Logo">
-    <h2>Login to SKILLSENA</h2>
-    <form onsubmit="loginUser(event)">
-      <input type="tel" id="mobile" placeholder="Mobile Number" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit">Login</button>
-      <p>New user? <a href="register.html">Register here</a></p>
-      <p><a href="reset-password.html">🔑 Forgot Password?</a></p>
-    </form>
-  </div>
 
-  <script>
+    // ✅ Login function
     function loginUser(event) {
-      event.preventDefault(); // Stop page from refreshing
+      event.preventDefault();
 
       const mobile = document.getElementById("mobile").value.trim();
       const password = document.getElementById("password").value;
 
       if (!mobile || !password) {
-        alert("Please enter both fields.");
+        alert("Please fill in both fields.");
         return;
       }
 
       const userRef = database.ref("users/" + mobile);
-      userRef.get().then((snapshot) => {
+      userRef.once("value").then((snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.val();
 
           if (userData.status === "blocked") {
-            alert("🚫 Your account is blocked by admin. Please contact support.");
+            alert("🚫 Your account is blocked by admin.");
             return;
           }
 
@@ -126,16 +116,33 @@
             alert("✅ Login successful!");
             window.location.href = "dashboard.html";
           } else {
-            alert("Incorrect password.");
+            alert("❌ Incorrect password.");
           }
         } else {
-          alert("User not found. Please register first.");
+          alert("❌ User not found. Please register first.");
         }
       }).catch((error) => {
-        console.error(error);
-        alert("Something went wrong. Try again later.");
+        console.error("Firebase error:", error);
+        alert("Something went wrong.");
       });
     }
   </script>
+</head>
+
+<body>
+  <div class="form-container">
+    <img src="skillsena.png" alt="Skillsena Logo">
+    <h2>Login to SKILLSENA</h2>
+
+    <!-- ✅ Login Form -->
+    <form onsubmit="loginUser(event)">
+      <input type="tel" id="mobile" placeholder="Mobile Number" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+
+      <p>New user? <a href="register.html">Register here</a></p>
+      <p><a href="reset-password.html">🔑 Forgot Password?</a></p>
+    </form>
+  </div>
 </body>
 </html>
