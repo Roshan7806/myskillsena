@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Typing Game - SkillSena</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #8360c3, #2ebf91);
+      background: linear-gradient(to right, #614385, #516395);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
       color: #fff;
     }
-
     .top-bar {
       padding: 12px 20px;
       background: rgba(0, 0, 0, 0.2);
@@ -19,61 +21,59 @@
       justify-content: space-between;
       font-size: 16px;
     }
-
     .container {
+      flex: 1;
       display: flex;
-      justify-content: center;
       align-items: center;
-      min-height: 90vh;
+      justify-content: center;
       padding: 20px;
     }
-
     .game-box {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(8px);
-      padding: 30px 20px;
-      border-radius: 16px;
-      text-align: center;
       width: 100%;
       max-width: 380px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 30px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      text-align: center;
     }
-
     .game-box h2 {
-      margin-bottom: 20px;
-      font-size: 24px;
+      font-size: 26px;
+      margin-bottom: 25px;
     }
-
     label {
       display: block;
-      font-size: 16px;
       margin-bottom: 10px;
+      font-size: 16px;
     }
-
     select {
       width: 100%;
-      padding: 12px;
-      font-size: 16px;
+      padding: 14px;
       border-radius: 8px;
       border: none;
+      font-size: 16px;
       color: #333;
     }
-
     button {
+      margin-top: 25px;
       width: 100%;
-      margin-top: 20px;
       padding: 14px;
       font-size: 18px;
-      font-weight: bold;
       background: #ffcc00;
+      color: #000;
+      font-weight: bold;
       border: none;
       border-radius: 8px;
-      color: #000;
       cursor: pointer;
+      transition: 0.3s;
     }
-
     button:hover {
       background: #e6b800;
+    }
+    @media screen and (max-width: 480px) {
+      .game-box h2 { font-size: 22px; }
+      button { font-size: 16px; padding: 12px; }
     }
   </style>
 
@@ -91,71 +91,18 @@
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
     firebase.initializeApp(firebaseConfig);
-
-    const mobile = sessionStorage.getItem("mobile");
-    const userId = localStorage.getItem("userId");
-
-    if (!mobile || !userId) {
-      alert("Please login first.");
-      window.location.href = "login.html";
-    }
-
-    let userData = null;
-
-    firebase.database().ref("users/" + mobile).once("value")
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          userData = snapshot.val();
-          document.getElementById("username").innerText = userData.name || "User";
-          document.getElementById("balance").innerText = userData.balance || 0;
-        } else {
-          alert("User not found.");
-          window.location.href = "login.html";
-        }
-      })
-      .catch(error => {
-        console.error(error);
-        alert("Something went wrong.");
-        window.location.href = "login.html";
-      });
-
-    function startTypingGame() {
-      const bet = parseInt(document.getElementById("bet").value);
-      if (!userData) {
-        alert("Please wait, user data loading...");
-        return;
-      }
-
-      if (userData.balance < bet) {
-        alert("❌ Not enough balance!");
-        return;
-      }
-
-      const newBalance = userData.balance - bet;
-
-      firebase.database().ref("users/" + mobile).update({
-        balance: newBalance
-      }).then(() => {
-        sessionStorage.setItem("typing_bet", bet);
-        window.location.href = "play-typing-game.html";
-      }).catch(error => {
-        console.error(error);
-        alert("Something went wrong.");
-      });
-    }
   </script>
 </head>
 <body>
-
   <div class="top-bar">
-    <div>👤 <span id="username">Loading...</span></div>
+    <div>👤 <span id="username">User</span></div>
     <div>💰 Coins: ₹<span id="balance">0</span></div>
   </div>
 
   <div class="container">
     <div class="game-box">
-      <h2>⌨️ Typing Speed Game</h2>
-      <label for="bet">💵 Select Bet Amount:</label>
+      <h2>⌨️ Typing Game</h2>
+      <label for="bet">📌 Select Bet Amount:</label>
       <select id="bet">
         <option value="10">₹10</option>
         <option value="20">₹20</option>
@@ -166,9 +113,67 @@
         <option value="400">₹400</option>
         <option value="500">₹500</option>
       </select>
-      <button onclick="startTypingGame()">🚀 Start Game</button>
+      <button onclick="startGame()">🎮 Start Game</button>
     </div>
   </div>
 
+  <script>
+    const mobile = sessionStorage.getItem("mobile");
+
+    if (!mobile) {
+      alert("Please login first.");
+      window.location.href = "login.html";
+    }
+
+    const userRef = firebase.database().ref("users/" + mobile);
+    userRef.once("value")
+      .then((snapshot) => {
+        if (!snapshot.exists()) {
+          alert("User not found.");
+          sessionStorage.clear();
+          window.location.href = "login.html";
+        } else {
+          const user = snapshot.val();
+          document.getElementById("username").textContent = user.name || "User";
+          document.getElementById("balance").textContent = user.balance || 0;
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting user:", error);
+        alert("Something went wrong. Try again.");
+        sessionStorage.clear();
+        window.location.href = "login.html";
+      });
+
+    function startGame() {
+      const bet = parseInt(document.getElementById("bet").value);
+      const userRef = firebase.database().ref("users/" + mobile);
+
+      userRef.once("value")
+        .then((snapshot) => {
+          const user = snapshot.val();
+          if (!user || user.balance === undefined) {
+            alert("User data not found.");
+            return;
+          }
+
+          if (user.balance < bet) {
+            alert("❌ You don't have enough coins!");
+            return;
+          }
+
+          const newBalance = user.balance - bet;
+          userRef.update({ balance: newBalance });
+
+          sessionStorage.setItem("current_bet", bet);
+
+          window.location.href = "play-typing-game.html";
+        })
+        .catch((error) => {
+          console.error("Start game error:", error);
+          alert("Error starting game. Try again.");
+        });
+    }
+  </script>
 </body>
 </html>
