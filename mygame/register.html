@@ -68,10 +68,11 @@
     }
   </style>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-  <script>
+  <!-- Firebase Modular v9 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, get, set, update, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
@@ -82,28 +83,11 @@
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-  </script>
-</head>
-<body>
-  <div class="form-container">
-    <img src="skillsena.png" alt="Skillsena Logo">
-    <h2>Register on SKILLSENA</h2>
-    <form onsubmit="registerUser(event)">
-      <input type="text" id="name" placeholder="Full Name" required>
-      <input type="tel" id="mobile" placeholder="Mobile Number" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <input type="password" id="confirm" placeholder="Confirm Password" required>
-      <input type="text" id="refer" placeholder="Referral Code (Optional)">
-      <button type="submit">Register</button>
-      <p>Already have an account? <a href="login.html">Login here</a></p>
-    </form>
-  </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  <script>
-    function registerUser(event) {
-      event.preventDefault(); // 🛑 Prevent page reload
+    window.registerUser = async function(event) {
+      event.preventDefault();
 
       const name = document.getElementById("name").value.trim();
       const mobile = document.getElementById("mobile").value.trim();
@@ -121,61 +105,57 @@
         return;
       }
 
-      // Check if user already exists
-      const userRef = database.ref("users/" + mobile);
-      userRef.get().then((snapshot) => {
-        if (snapshot.exists()) {
-          alert("This mobile number is already registered.");
+      const userRef = ref(db, "users/" + mobile);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        alert("This mobile number is already registered.");
+        return;
+      }
+
+      let reward = 0;
+
+      if (referCode !== "") {
+        const referSnap = await get(ref(db, "users/" + referCode));
+        if (referSnap.exists()) {
+          const referUser = referSnap.val();
+          reward = 5;
+          await update(ref(db, "users/" + referCode), {
+            balance: (referUser.balance || 0) + 5
+          });
         } else {
-          // Referral check
-          let reward = 0;
-
-          if (referCode !== "") {
-            database.ref("users/" + referCode).get().then((referSnapshot) => {
-              if (referSnapshot.exists()) {
-                let referUser = referSnapshot.val();
-                reward = 5;
-
-                // Add 5 coins to referrer
-                database.ref("users/" + referCode).update({
-                  balance: (referUser.balance || 0) + 5
-                });
-              } else {
-                alert("Invalid referral code.");
-                return;
-              }
-
-              // Create new user
-              const newUser = {
-                name,
-                mobile,
-                password,
-                balance: reward
-              };
-
-              userRef.set(newUser).then(() => {
-                alert("Registration successful!");
-                window.location.href = "login.html";
-              });
-
-            });
-          } else {
-            // No referral, just create user
-            const newUser = {
-              name,
-              mobile,
-              password,
-              balance: reward
-            };
-
-            userRef.set(newUser).then(() => {
-              alert("Registration successful!");
-              window.location.href = "login.html";
-            });
-          }
+          alert("Invalid referral code.");
+          return;
         }
-      });
-    }
+      }
+
+      const newUser = {
+        name,
+        mobile,
+        password,
+        balance: reward
+      };
+
+      await set(userRef, newUser);
+
+      alert("Registration successful!");
+      window.location.href = "login.html";
+    };
   </script>
+</head>
+<body>
+  <div class="form-container">
+    <img src="skillsena.png" alt="Skillsena Logo">
+    <h2>Register on SKILLSENA</h2>
+    <form onsubmit="registerUser(event)">
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="tel" id="mobile" placeholder="Mobile Number" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <input type="password" id="confirm" placeholder="Confirm Password" required>
+      <input type="text" id="refer" placeholder="Referral Code (Optional)">
+      <button type="submit">Register</button>
+      <p>Already have an account? <a href="login.html">Login here</a></p>
+    </form>
+  </div>
 </body>
 </html>
