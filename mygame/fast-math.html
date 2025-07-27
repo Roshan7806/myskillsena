@@ -118,7 +118,8 @@
   </div>
 
   <script>
-    const userId = sessionStorage.getItem("userId");
+    // ✅ Use localStorage instead of sessionStorage
+    const userId = localStorage.getItem("userId");
 
     if (!userId) {
       alert("Please login first.");
@@ -130,7 +131,7 @@
       const user = snapshot.val();
       if (!user) {
         alert("User not found.");
-        sessionStorage.clear();
+        localStorage.clear();
         window.location.href = "login.html";
       } else {
         document.getElementById("username").textContent = user.name || "User";
@@ -158,8 +159,8 @@
         const newBalance = user.balance - bet;
         userRef.update({ balance: newBalance });
 
-        // Store current bet in sessionStorage
-        sessionStorage.setItem("current_bet", bet);
+        // Store current bet in localStorage for next page
+        localStorage.setItem("current_bet", bet);
 
         // Go to game page
         window.location.href = "play-fast-math.html";
