@@ -118,7 +118,8 @@
     </div>
   </div>
   <script>
-    const userId = sessionStorage.getItem("userId");
+    const userId = sessionStorage.getItem("loggedInUser"); // ✅ FIXED THIS LINE
+
     if (!userId) {
       alert("Please login first.");
       window.location.href = "login.html";
@@ -133,7 +134,6 @@
 
     function startGame() {
       const bet = parseInt(document.getElementById("bet").value);
-      const userRef = firebase.database().ref("users/" + userId);
 
       userRef.once("value").then((snapshot) => {
         const user = snapshot.val();
