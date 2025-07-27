@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Typing Game - SkillSena</title>
-
   <style>
     body {
       margin: 0;
@@ -12,6 +11,7 @@
       background: linear-gradient(to right, #8360c3, #2ebf91);
       color: #fff;
     }
+
     .top-bar {
       padding: 12px 20px;
       background: rgba(0, 0, 0, 0.2);
@@ -19,6 +19,7 @@
       justify-content: space-between;
       font-size: 16px;
     }
+
     .container {
       display: flex;
       justify-content: center;
@@ -26,6 +27,7 @@
       min-height: 90vh;
       padding: 20px;
     }
+
     .game-box {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(8px);
@@ -36,15 +38,18 @@
       max-width: 380px;
       box-shadow: 0 0 20px rgba(0,0,0,0.2);
     }
+
     .game-box h2 {
       margin-bottom: 20px;
       font-size: 24px;
     }
+
     label {
       display: block;
       font-size: 16px;
       margin-bottom: 10px;
     }
+
     select {
       width: 100%;
       padding: 12px;
@@ -53,6 +58,7 @@
       border: none;
       color: #333;
     }
+
     button {
       width: 100%;
       margin-top: 20px;
@@ -65,18 +71,18 @@
       color: #000;
       cursor: pointer;
     }
+
     button:hover {
       background: #e6b800;
     }
   </style>
 
-  <!-- ✅ Correct Firebase v8 CDN Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // ✅ Firebase Config
-    var firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
       databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
@@ -86,60 +92,73 @@
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
     firebase.initializeApp(firebaseConfig);
-    var database = firebase.database();
+    const database = firebase.database();
 
-    let userId = sessionStorage.getItem("userId");
+    // Get session
+    const userId = localStorage.getItem("userId");
     let userData = null;
 
-    window.onload = function () {
-      if (!userId) {
+    if (!userId) {
+      alert("Please login first.");
+      window.location.href = "login.html";
+    } else {
+      // Find mobile number from sessionStorage
+      const mobile = sessionStorage.getItem("mobile");
+      if (!mobile) {
         alert("Please login first.");
         window.location.href = "login.html";
-        return;
       }
 
-      // ✅ Fetch user data
-      firebase.database().ref("users/" + userId).once("value").then(function(snapshot) {
-        if (snapshot.exists()) {
-          userData = snapshot.val();
-          document.getElementById("username").textContent = userData.name;
-          document.getElementById("balance").textContent = userData.balance;
-        } else {
-          alert("User not found.");
+      // Load user data
+      firebase.database().ref("users/" + mobile).once("value")
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            userData = snapshot.val();
+            document.getElementById("username").innerText = userData.name || "User";
+            document.getElementById("balance").innerText = userData.balance || 0;
+          } else {
+            alert("User not found.");
+            window.location.href = "login.html";
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          alert("Error loading user.");
           window.location.href = "login.html";
-        }
-      });
-    };
+        });
+    }
 
     function startTypingGame() {
       const bet = parseInt(document.getElementById("bet").value);
-
       if (!userData) {
-        alert("Please login first.");
+        alert("Please wait, loading user data...");
         return;
       }
 
       if (userData.balance < bet) {
-        alert("❌ Not enough coins to play!");
+        alert("❌ Not enough balance!");
         return;
       }
 
-      // ✅ Deduct balance
-      userData.balance -= bet;
-      firebase.database().ref("users/" + userId).update({
-        balance: userData.balance
-      });
+      const newBalance = userData.balance - bet;
 
-      // ✅ Save bet for next page
-      sessionStorage.setItem("typing_bet", bet);
-      window.location.href = "play-typing-game.html";
+      // Update Firebase balance
+      firebase.database().ref("users/" + sessionStorage.getItem("mobile")).update({
+        balance: newBalance
+      }).then(() => {
+        sessionStorage.setItem("typing_bet", bet);
+        window.location.href = "play-typing-game.html";
+      }).catch((error) => {
+        console.error(error);
+        alert("Something went wrong.");
+      });
     }
   </script>
 </head>
 <body>
 
   <div class="top-bar">
-    <div>👤 <span id="username">User</span></div>
+    <div>👤 <span id="username">Loading...</span></div>
     <div>💰 Coins: ₹<span id="balance">0</span></div>
   </div>
 
