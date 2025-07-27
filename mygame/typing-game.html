@@ -77,10 +77,9 @@
     }
   </style>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
@@ -92,46 +91,38 @@
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
 
-    // Get session
+    const mobile = sessionStorage.getItem("mobile");
     const userId = localStorage.getItem("userId");
-    let userData = null;
 
-    if (!userId) {
+    if (!mobile || !userId) {
       alert("Please login first.");
       window.location.href = "login.html";
-    } else {
-      // Find mobile number from sessionStorage
-      const mobile = sessionStorage.getItem("mobile");
-      if (!mobile) {
-        alert("Please login first.");
-        window.location.href = "login.html";
-      }
-
-      // Load user data
-      firebase.database().ref("users/" + mobile).once("value")
-        .then((snapshot) => {
-          if (snapshot.exists()) {
-            userData = snapshot.val();
-            document.getElementById("username").innerText = userData.name || "User";
-            document.getElementById("balance").innerText = userData.balance || 0;
-          } else {
-            alert("User not found.");
-            window.location.href = "login.html";
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-          alert("Error loading user.");
-          window.location.href = "login.html";
-        });
     }
+
+    let userData = null;
+
+    firebase.database().ref("users/" + mobile).once("value")
+      .then(snapshot => {
+        if (snapshot.exists()) {
+          userData = snapshot.val();
+          document.getElementById("username").innerText = userData.name || "User";
+          document.getElementById("balance").innerText = userData.balance || 0;
+        } else {
+          alert("User not found.");
+          window.location.href = "login.html";
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert("Something went wrong.");
+        window.location.href = "login.html";
+      });
 
     function startTypingGame() {
       const bet = parseInt(document.getElementById("bet").value);
       if (!userData) {
-        alert("Please wait, loading user data...");
+        alert("Please wait, user data loading...");
         return;
       }
 
@@ -142,13 +133,12 @@
 
       const newBalance = userData.balance - bet;
 
-      // Update Firebase balance
-      firebase.database().ref("users/" + sessionStorage.getItem("mobile")).update({
+      firebase.database().ref("users/" + mobile).update({
         balance: newBalance
       }).then(() => {
         sessionStorage.setItem("typing_bet", bet);
         window.location.href = "play-typing-game.html";
-      }).catch((error) => {
+      }).catch(error => {
         console.error(error);
         alert("Something went wrong.");
       });
