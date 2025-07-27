@@ -38,10 +38,7 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
       text-align: center;
     }
-    .game-box h2 {
-      font-size: 26px;
-      margin-bottom: 25px;
-    }
+    .game-box h2 { font-size: 26px; margin-bottom: 25px; }
     label {
       display: block;
       margin-bottom: 10px;
@@ -68,9 +65,7 @@
       cursor: pointer;
       transition: 0.3s;
     }
-    button:hover {
-      background: #e6b800;
-    }
+    button:hover { background: #e6b800; }
     @media screen and (max-width: 480px) {
       .game-box h2 { font-size: 22px; }
       button { font-size: 16px; padding: 12px; }
@@ -118,14 +113,12 @@
   </div>
 
   <script>
-    // Check if user is logged in
     const userId = sessionStorage.getItem("userId");
     if (!userId) {
       alert("Please login first.");
       window.location.href = "login.html";
     }
 
-    // Check if user exists in Firebase
     const userRef = firebase.database().ref("users/" + userId);
     userRef.once("value")
       .then((snapshot) => {
@@ -163,14 +156,9 @@
             return;
           }
 
-          // Deduct coins
           const newBalance = user.balance - bet;
           userRef.update({ balance: newBalance });
-
-          // Save bet
           sessionStorage.setItem("current_bet", bet);
-
-          // Redirect to game
           window.location.href = "play-fast-math.html";
         })
         .catch((error) => {
