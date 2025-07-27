@@ -1,16 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="status-checker.js"></script>
-<script>
-  checkGameAccess("fastMath");
-</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fast Math Game - SkillSena</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     body {
       font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(to right, #1f4037, #99f2c8);
@@ -19,7 +14,6 @@
       flex-direction: column;
       color: #fff;
     }
-
     .top-bar {
       padding: 12px 20px;
       background: rgba(0, 0, 0, 0.2);
@@ -27,7 +21,6 @@
       justify-content: space-between;
       font-size: 16px;
     }
-
     .container {
       flex: 1;
       display: flex;
@@ -35,7 +28,6 @@
       justify-content: center;
       padding: 20px;
     }
-
     .game-box {
       width: 100%;
       max-width: 380px;
@@ -46,18 +38,15 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
       text-align: center;
     }
-
     .game-box h2 {
       font-size: 26px;
       margin-bottom: 25px;
     }
-
     label {
       display: block;
       margin-bottom: 10px;
       font-size: 16px;
     }
-
     select {
       width: 100%;
       padding: 14px;
@@ -66,7 +55,6 @@
       font-size: 16px;
       color: #333;
     }
-
     button {
       margin-top: 25px;
       width: 100%;
@@ -80,42 +68,38 @@
       cursor: pointer;
       transition: 0.3s;
     }
-
     button:hover {
       background: #e6b800;
     }
-
     @media screen and (max-width: 480px) {
       .game-box h2 { font-size: 22px; }
       button { font-size: 16px; padding: 12px; }
     }
   </style>
-
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
-
+  <script src="status-checker.js"></script>
+  <script>
+    checkGameAccess("fastMath");
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
 </head>
 <body>
-
   <div class="top-bar">
     <div>👤 <span id="username">User</span></div>
     <div>💰 Coins: ₹<span id="balance">0</span></div>
   </div>
-
   <div class="container">
     <div class="game-box">
       <h2>🧠 Fast Math Game</h2>
@@ -133,35 +117,46 @@
       <button onclick="startGame()">🎮 Start Game</button>
     </div>
   </div>
-
   <script>
-    const mobile = // localStorage removed - replaced by FirebasegetItem("loggedInUser");
-    if (!mobile) {
+    const userId = sessionStorage.getItem("userId");
+    if (!userId) {
       alert("Please login first.");
       window.location.href = "login.html";
     }
 
-    const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
-    document.getElementById("username").textContent = user.name;
-    document.getElementById("balance").textContent = user.balance;
+    const userRef = firebase.database().ref("users/" + userId);
+    userRef.once("value").then((snapshot) => {
+      const user = snapshot.val();
+      document.getElementById("username").textContent = user.name || "User";
+      document.getElementById("balance").textContent = user.balance || 0;
+    });
 
     function startGame() {
       const bet = parseInt(document.getElementById("bet").value);
+      const userRef = firebase.database().ref("users/" + userId);
 
-      if (user.balance < bet) {
-        alert("❌ You don't have enough coins!");
-        return;
-      }
+      userRef.once("value").then((snapshot) => {
+        const user = snapshot.val();
+        if (!user || user.balance === undefined) {
+          alert("User data not found.");
+          return;
+        }
 
-      // ✅ Coins काटो – सिर्फ यहीं
-      user.balance -= bet;
-      // localStorage removed - replaced by FirebasesetItem("user_" + mobile, JSON.stringify(user));
+        if (user.balance < bet) {
+          alert("❌ You don't have enough coins!");
+          return;
+        }
 
-      // Bet amount store करो – अगले पेज के लिए
-      // localStorage removed - replaced by FirebasesetItem("current_bet", bet);
+        // Update balance
+        const newBalance = user.balance - bet;
+        userRef.update({ balance: newBalance });
 
-      // ✅ Game page पर भेजो
-      window.location.href = "play-fast-math.html";
+        // Store current bet in sessionStorage
+        sessionStorage.setItem("current_bet", bet);
+
+        // Go to game page
+        window.location.href = "play-fast-math.html";
+      });
     }
   </script>
 </body>
