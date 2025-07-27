@@ -1,59 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Login - SKILLSENA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - SkillSena</title>
   <style>
     body {
-      background: linear-gradient(135deg, #f6f9fc, #e0f7fa);
-      font-family: 'Segoe UI', sans-serif;
-      padding: 30px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #283c86, #45a247);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: #fff;
     }
-    .form-container {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    .login-box {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      width: 300px;
       text-align: center;
     }
-    .form-container img {
-      width: 160px;
-      margin-bottom: 15px;
-    }
-    h2 { color: #333; }
     input {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
+      border: none;
+      border-radius: 5px;
       font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
     }
     button {
-      width: 100%;
-      padding: 12px;
-      background: #007bff;
-      color: white;
+      padding: 12px 20px;
       font-size: 16px;
+      background: #ffcc00;
+      color: #000;
       border: none;
-      border-radius: 8px;
+      border-radius: 5px;
       cursor: pointer;
+      font-weight: bold;
+      width: 100%;
     }
-    button:hover { background: #0056b3; }
-    p { margin-top: 15px; }
-    a {
-      color: #007bff;
-      text-decoration: none;
+    button:hover {
+      background: #e6b800;
     }
-    a:hover { text-decoration: underline; }
   </style>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
@@ -65,61 +61,56 @@
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+  </script>
+</head>
+<body>
 
-    function loginUser(event) {
-      event.preventDefault();
+  <div class="login-box">
+    <h2>Login to SkillSena</h2>
+    <input type="text" id="mobile" placeholder="📱 Mobile Number" />
+    <input type="password" id="password" placeholder="🔒 Password" />
+    <button onclick="loginUser()">🔓 Login</button>
+  </div>
+
+  <script>
+    function loginUser() {
       const mobile = document.getElementById("mobile").value.trim();
       const password = document.getElementById("password").value;
 
       if (!mobile || !password) {
-        alert("Please fill in both fields.");
+        alert("Please enter mobile number and password.");
         return;
       }
 
-      const userRef = database.ref("users/" + mobile);
-      userRef.once("value").then((snapshot) => {
-        if (snapshot.exists()) {
-          const userData = snapshot.val();
+      const userRef = firebase.database().ref("users/" + mobile);
 
-          if (userData.status === "blocked") {
-            alert("🚫 Your account is blocked by admin.");
+      userRef.once("value")
+        .then((snapshot) => {
+          if (!snapshot.exists()) {
+            alert("❌ User not found.");
             return;
           }
 
-          if (userData.password === password) {
-            localStorage.setItem("loggedInUser", mobile);
-            localStorage.setItem("userId", userData.userId);
-            sessionStorage.setItem("userId", userData.userId); // ✅ FIXED
-
-            alert("✅ Login successful!");
-            window.location.href = "dashboard.html";
-          } else {
+          const userData = snapshot.val();
+          if (userData.password !== password) {
             alert("❌ Incorrect password.");
+            return;
           }
-        } else {
-          alert("❌ User not found. Please register first.");
-        }
-      }).catch((error) => {
-        console.error("Firebase error:", error);
-        alert("Something went wrong. Try again.");
-      });
+
+          // ✅ Store login session
+          localStorage.setItem("loggedInUser", mobile);
+          localStorage.setItem("userId", userData.userId || "");
+          sessionStorage.setItem("mobile", mobile); // ✅ VERY IMPORTANT
+
+          alert("✅ Login successful!");
+          window.location.href = "dashboard.html";
+        })
+        .catch((error) => {
+          console.error("Login error:", error);
+          alert("Something went wrong. Try again.");
+        });
     }
   </script>
-</head>
 
-<body>
-  <div class="form-container">
-    <img src="skillsena.png" alt="Skillsena Logo">
-    <h2>Login to SKILLSENA</h2>
-
-    <form onsubmit="loginUser(event)">
-      <input type="tel" id="mobile" placeholder="Mobile Number" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit">Login</button>
-      <p>New user? <a href="register.html">Register here</a></p>
-      <p><a href="reset-password.html">🔑 Forgot Password?</a></p>
-    </form>
-  </div>
 </body>
 </html>
