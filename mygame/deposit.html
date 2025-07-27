@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="status-checker.js"></script>
-  <script>
-    checkGameAccess("deposit");
-  </script>
   <meta charset="UTF-8" />
   <title>Deposit Coins - SkillSena</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -90,9 +86,9 @@
     }
   </style>
 
-  <!-- Firebase Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
@@ -103,25 +99,11 @@
       messagingSenderId: "149529300642",
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
-    const app = firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
   </script>
 </head>
 <body>
-
-<!-- ✅ Fix sessionStorage from localStorage -->
-<script>
-  if (!sessionStorage.getItem("userId") && localStorage.getItem("userId")) {
-    sessionStorage.setItem("userId", localStorage.getItem("userId"));
-  }
-
-  const userId = sessionStorage.getItem("userId");
-
-  if (!userId) {
-    alert("Please login first.");
-    window.location.href = "login.html";
-  }
-</script>
 
   <div class="container">
     <h2>💰 Deposit Coins</h2>
@@ -152,6 +134,12 @@
   </div>
 
   <script>
+    const mobile = sessionStorage.getItem("mobile");
+    if (!mobile) {
+      alert("❌ Please login first.");
+      window.location.href = "login.html";
+    }
+
     const qrList = [
       { src: "images/qr1.png", weight: 0.2 },
       { src: "images/qr2.png", weight: 0.2 },
@@ -172,12 +160,7 @@
     const qrName = qrImageSrc.split('/').pop().replace('.png', '');
     document.getElementById("qrImage").src = qrImageSrc;
 
-    async function getUserData(userId) {
-      const snapshot = await firebase.database().ref("users/" + userId).once("value");
-      return snapshot.exists() ? snapshot.val() : null;
-    }
-
-    async function submitDeposit() {
+    function submitDeposit() {
       const amount = parseInt(document.getElementById("amount").value);
       const txnId = document.getElementById("txnId").value.trim();
       const utr = document.getElementById("utr").value.trim();
@@ -187,70 +170,78 @@
         return;
       }
 
-      const user = await getUserData(userId);
-      if (!user) {
-        alert("User not found.");
-        return;
-      }
+      const userRef = db.ref("users/" + mobile);
+      userRef.once("value").then((snap) => {
+        if (!snap.exists()) {
+          alert("User not found!");
+          return;
+        }
 
-      const newDeposit = {
-        name: user.name || "",
-        mobile: user.mobile || "",
-        amount,
-        txnId,
-        utr,
-        qr: qrName,
-        status: "Pending",
-        time: new Date().toLocaleString()
-      };
+        const userData = snap.val();
 
-      const depositRef = firebase.database().ref("deposit_requests");
-      const snapshot = await depositRef.once("value");
-      const allDeposits = snapshot.val() || {};
+        db.ref("deposit_requests").once("value").then((allSnap) => {
+          let duplicate = false;
+          allSnap.forEach(child => {
+            if (child.val().utr === utr) {
+              duplicate = true;
+            }
+          });
 
-      const isDuplicate = Object.values(allDeposits).some(dep => dep.utr === utr);
-      if (isDuplicate) {
-        alert("This UTR number already exists.");
-        return;
-      }
+          if (duplicate) {
+            alert("❌ This UTR number already exists.");
+            return;
+          }
 
-      // Save to global deposit_requests
-      const newRef = depositRef.push();
-      await newRef.set(newDeposit);
+          const newDeposit = {
+            name: userData.name,
+            mobile: mobile,
+            amount,
+            txnId,
+            utr,
+            qr: qrName,
+            status: "Pending",
+            time: new Date().toLocaleString()
+          };
 
-      // Save to user-wise history
-      await firebase.database().ref("users/" + userId + "/deposits").push(newDeposit);
+          // Save to user-specific and global deposit_requests
+          const newRef = db.ref("deposit_requests").push();
+          newRef.set(newDeposit);
 
-      document.getElementById("submitBtn").disabled = true;
-      document.getElementById("submitBtn").innerText = "Submitted ✅";
+          const userDepositRef = db.ref("user_deposits/" + mobile).push();
+          userDepositRef.set(newDeposit);
 
-      showHistory();
+          document.getElementById("submitBtn").disabled = true;
+          document.getElementById("submitBtn").innerText = "Submitted ✅";
+
+          showHistory();
+        });
+
+      });
     }
 
-    async function showHistory() {
+    function showHistory() {
       const historyDiv = document.getElementById("depositHistory");
-      historyDiv.innerHTML = "";
-
-      const snapshot = await firebase.database().ref("users/" + userId + "/deposits").once("value");
-      const deposits = snapshot.val() || {};
-
-      const items = Object.values(deposits).reverse();
-
-      items.forEach(dep => {
-        historyDiv.innerHTML += `
-          <div class="history-item">
-            <div>Amount: ₹${dep.amount}</div>
-            <div>Txn ID: ${dep.txnId}</div>
-            <div>UTR: ${dep.utr}</div>
-            <div>QR Used: ${dep.qr}</div>
-            <div>Status: <span class="status">${dep.status}</span></div>
-            <div><small>${dep.time}</small></div>
-          </div>
-        `;
+      db.ref("user_deposits/" + mobile).once("value").then((snap) => {
+        historyDiv.innerHTML = "";
+        const items = [];
+        snap.forEach(child => items.unshift(child.val()));
+        items.forEach(dep => {
+          historyDiv.innerHTML += `
+            <div class="history-item">
+              <div>Amount: ₹${dep.amount}</div>
+              <div>Txn ID: ${dep.txnId}</div>
+              <div>UTR: ${dep.utr}</div>
+              <div>QR Used: ${dep.qr}</div>
+              <div>Status: <span class="status">${dep.status}</span></div>
+              <div><small>${dep.time}</small></div>
+            </div>
+          `;
+        });
       });
     }
 
     showHistory();
   </script>
+
 </body>
 </html>
