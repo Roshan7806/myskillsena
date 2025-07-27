@@ -4,14 +4,12 @@
   <meta charset="UTF-8">
   <title>Login - SKILLSENA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <style>
     body {
       background: linear-gradient(135deg, #f6f9fc, #e0f7fa);
       font-family: 'Segoe UI', sans-serif;
       padding: 30px;
     }
-
     .form-container {
       max-width: 400px;
       margin: auto;
@@ -21,16 +19,11 @@
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
-
     .form-container img {
       width: 160px;
       margin-bottom: 15px;
     }
-
-    h2 {
-      color: #333;
-    }
-
+    h2 { color: #333; }
     input {
       width: 100%;
       padding: 12px;
@@ -39,7 +32,6 @@
       border: 1px solid #ccc;
       border-radius: 8px;
     }
-
     button {
       width: 100%;
       padding: 12px;
@@ -50,31 +42,19 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #0056b3;
-    }
-
-    p {
-      margin-top: 15px;
-    }
-
+    button:hover { background: #0056b3; }
+    p { margin-top: 15px; }
     a {
       color: #007bff;
       text-decoration: none;
     }
-
-    a:hover {
-      text-decoration: underline;
-    }
+    a:hover { text-decoration: underline; }
   </style>
 
-  <!-- ✅ Firebase Scripts -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
   <script>
-    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
@@ -84,15 +64,11 @@
       messagingSenderId: "149529300642",
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
-
-    // ✅ Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ✅ Login Function
     function loginUser(event) {
       event.preventDefault();
-
       const mobile = document.getElementById("mobile").value.trim();
       const password = document.getElementById("password").value;
 
@@ -112,9 +88,9 @@
           }
 
           if (userData.password === password) {
-            // ✅ Save login session
             localStorage.setItem("loggedInUser", mobile);
-            localStorage.setItem("userId", userData.userId);  // 🔑 Important line for game pages
+            localStorage.setItem("userId", userData.userId);
+            sessionStorage.setItem("userId", userData.userId); // ✅ FIXED
 
             alert("✅ Login successful!");
             window.location.href = "dashboard.html";
@@ -137,12 +113,10 @@
     <img src="skillsena.png" alt="Skillsena Logo">
     <h2>Login to SKILLSENA</h2>
 
-    <!-- ✅ Login Form -->
     <form onsubmit="loginUser(event)">
       <input type="tel" id="mobile" placeholder="Mobile Number" required>
       <input type="password" id="password" placeholder="Password" required>
       <button type="submit">Login</button>
-
       <p>New user? <a href="register.html">Register here</a></p>
       <p><a href="reset-password.html">🔑 Forgot Password?</a></p>
     </form>
