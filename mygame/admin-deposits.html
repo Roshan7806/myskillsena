@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Deposit Requests</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .request {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .status {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      margin-right: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .approve {
+      background: #4caf50;
+      color: white;
+    }
+    .reject {
+      background: #f44336;
+      color: white;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+
+  <h2>🧾 Admin - Deposit Requests</h2>
+  <div id="requests"></div>
+
+  <script>
+    function showDeposits() {
+      const allDeposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests")) || [];
+      const container = document.getElementById("requests");
+      container.innerHTML = "";
+
+      allDeposits.forEach((dep, index) => {
+        container.innerHTML += `
+          <div class="request">
+            <div><strong>Name:</strong> ${dep.name}</div>
+            <div><strong>Mobile:</strong> ${dep.mobile}</div>
+            <div><strong>Amount:</strong> ₹${dep.amount}</div>
+            <div><strong>Txn ID:</strong> ${dep.txnId}</div>
+            <div><strong>UTR:</strong> ${dep.utr}</div>
+            <div><strong>QR Used:</strong> ${dep.qr}</div>
+            <div><strong>Time:</strong> ${dep.time}</div>
+            <div class="status">Status: ${dep.status}</div>
+            ${dep.status === "Pending" ? `
+              <button class="btn approve" onclick="approveDeposit(${index})">Approve</button>
+              <button class="btn reject" onclick="rejectDeposit(${index})">Reject</button>
+            ` : ""}
+          </div>
+        `;
+      });
+    }
+
+    function approveDeposit(index) {
+      const deposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests")) || [];
+      const deposit = deposits[index];
+
+      if (deposit.status !== "Pending") {
+        alert("This request is already " + deposit.status);
+        return;
+      }
+
+      // ✅ Step 1: Update status to "Approved"
+      deposit.status = "Approved";
+      deposits[index] = deposit;
+      // localStorage removed - replaced by FirebasesetItem("deposit_requests", JSON.stringify(deposits));
+
+      // ✅ Step 2: Add coins to user account
+      const userKey = "user_" + deposit.mobile;
+      const userData = JSON.parse(// localStorage removed - replaced by FirebasegetItem(userKey)) || {};
+
+      // Ensure 'coins' exists
+      userData.coins = (userData.coins || 0) + Number(deposit.amount);
+      // localStorage removed - replaced by FirebasesetItem(userKey, JSON.stringify(userData));
+
+      // ✅ Step 3: Update user-specific deposit history
+      const userDepKey = "deposit_requests_" + deposit.mobile;
+      const userDepositHistory = JSON.parse(// localStorage removed - replaced by FirebasegetItem(userDepKey)) || [];
+      const matchIndex = userDepositHistory.findIndex(d => d.utr === deposit.utr);
+
+      if (matchIndex !== -1) {
+        userDepositHistory[matchIndex].status = "Approved";
+        // localStorage removed - replaced by FirebasesetItem(userDepKey, JSON.stringify(userDepositHistory));
+      }
+
+      alert("✅ Approved! Coins added to user account.");
+      showDeposits();
+    }
+
+    function rejectDeposit(index) {
+      const deposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests")) || [];
+      const deposit = deposits[index];
+
+      if (deposit.status !== "Pending") {
+        alert("This request is already " + deposit.status);
+        return;
+      }
+
+      // ✅ Step 1: Update status to "Rejected"
+      deposit.status = "Rejected";
+      deposits[index] = deposit;
+      // localStorage removed - replaced by FirebasesetItem("deposit_requests", JSON.stringify(deposits));
+
+      // ✅ Step 2: Update user-specific deposit history
+      const userDepKey = "deposit_requests_" + deposit.mobile;
+      const userDepositHistory = JSON.parse(// localStorage removed - replaced by FirebasegetItem(userDepKey)) || [];
+      const matchIndex = userDepositHistory.findIndex(d => d.utr === deposit.utr);
+
+      if (matchIndex !== -1) {
+        userDepositHistory[matchIndex].status = "Rejected";
+        // localStorage removed - replaced by FirebasesetItem(userDepKey, JSON.stringify(userDepositHistory));
+      }
+
+      alert("❌ Rejected.");
+      showDeposits();
+    }
+
+    showDeposits();
+  </script>
+
+</body>
+</html>

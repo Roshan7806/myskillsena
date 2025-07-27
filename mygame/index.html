@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Roshan Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f1f2f6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    img {
+      max-width: 200px;
+      animation: fade 1.5s infinite alternate;
+    }
+
+    @keyframes fade {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
+    h2 {
+      font-family: Arial, sans-serif;
+      margin-top: 20px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔥 Sirf logo show karega -->
+  <img src="logo.png" alt="Roshan Game Logo">
+  <h2>Loading...</h2>
+
+  <script>
+    // 4 second ke baad main.html par redirect karega
+    setTimeout(() => {
+      window.location.href = "main.html";
+    }, 4000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+# Create the admin-coins.html code content as a string to be displayed to user or saved.
+admin_coins_html = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Add/Remove Coins</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0 20px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      width: 48%;
+      margin-right: 2%;
+    }
+
+    button.remove {
+      background-color: #dc3545;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .info-box {
+      background: #f0f8ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #cce5ff;
+    }
+
+    .log-entry {
+      background: #f9f9f9;
+      border-left: 5px solid #007bff;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .log-entry.red {
+      border-color: #dc3545;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+
+  <div class="container">
+    <h2>💸 Admin - Add / Remove Coins</h2>
+
+    <input type="text" id="searchMobile" placeholder="Enter Mobile Number">
+    <button onclick="searchUser()">Search</button>
+
+    <div id="userInfo" class="info-box" style="display:none;">
+      <p><strong>Name:</strong> <span id="userName"></span></p>
+      <p><strong>Balance:</strong> ₹<span id="userBalance"></span></p>
+
+      <input type="number" id="coinAmount" placeholder="Enter coin amount">
+
+      <div style="display:flex; justify-content: space-between;">
+        <button onclick="addCoins()">➕ Add Coins</button>
+        <button class="remove" onclick="removeCoins()">➖ Remove Coins</button>
+      </div>
+    </div>
+
+    <hr>
+
+    <h3>📜 Action Logs</h3>
+    <div id="logBox"></div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    const adminLogKey = "admin_logs";
+
+    function searchUser() {
+      const mobile = document.getElementById("searchMobile").value.trim();
+      const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
+      if (!user) {
+        alert("User not found!");
+        return;
+      }
+      currentUser = mobile;
+      document.getElementById("userName").textContent = user.name;
+      document.getElementById("userBalance").textContent = user.balance;
+      document.getElementById("userInfo").style.display = "block";
+    }
+
+    function addCoins() {
+      modifyCoins("add");
+    }
+
+    function removeCoins() {
+      modifyCoins("remove");
+    }
+
+    function modifyCoins(type) {
+      const amt = parseInt(document.getElementById("coinAmount").value);
+      if (!currentUser || isNaN(amt) || amt <= 0) {
+        alert("Enter valid amount.");
+        return;
+      }
+      const key = "user_" + currentUser;
+      let user = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key));
+      if (type === "add") {
+        user.balance += amt;
+        saveLog("Added ₹" + amt + " to " + user.mobile, false);
+      } else {
+        if (user.balance < amt) {
+          alert("Not enough coins!");
+          return;
+        }
+        user.balance -= amt;
+        saveLog("Removed ₹" + amt + " from " + user.mobile, true);
+      }
+      // localStorage removed - replaced by FirebasesetItem(key, JSON.stringify(user));
+      document.getElementById("userBalance").textContent = user.balance;
+      document.getElementById("coinAmount").value = "";
+    }
+
+    function saveLog(message, isRemove) {
+      const logKey = adminLogKey;
+      let logs = JSON.parse(// localStorage removed - replaced by FirebasegetItem(logKey)) || [];
+      logs.unshift({ msg: message, time: new Date().toLocaleString(), remove: isRemove });
+      // localStorage removed - replaced by FirebasesetItem(logKey, JSON.stringify(logs));
+      showLogs();
+    }
+
+    function showLogs() {
+      const logBox = document.getElementById("logBox");
+      const logs = JSON.parse(// localStorage removed - replaced by FirebasegetItem(adminLogKey)) || [];
+      logBox.innerHTML = "";
+      logs.forEach(log => {
+        const div = document.createElement("div");
+        div.className = "log-entry" + (log.remove ? " red" : "");
+        div.innerHTML = `<strong>${log.time}:</strong> ${log.msg}`;
+        logBox.appendChild(div);
+      });
+    }
+
+    showLogs();
+  </script>
+
+</body>
+</html>
+"""
+
+admin_coins_html[:2000]  # Show only part of the code due to character limits

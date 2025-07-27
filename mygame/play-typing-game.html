@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Typing Challenge - SkillSena</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      color: #fff;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: rgba(0, 0, 0, 0.2);
+      font-size: 16px;
+    }
+    .game-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 16px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 15px;
+    }
+    #timer {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #paragraph {
+      background: rgba(255,255,255,0.2);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-size: 18px;
+      color: #fff;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-size: 16px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      resize: none;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      background: #ffcc00;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e6b800;
+    }
+    #result {
+      text-align: center;
+      font-size: 20px;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body oncopy="return false" onpaste="return false">
+
+  <div class="top-bar">
+    <div>👤 <span id="username">User</span></div>
+    <div>💰 ₹<span id="balance">0</span></div>
+  </div>
+
+  <div class="game-container">
+    <h2>⌨️ Typing Challenge</h2>
+    <div id="timer">⏱ Time Left: 60s</div>
+    <div id="paragraph">Loading paragraph...</div>
+    <textarea id="typed" placeholder="Start typing here..." oninput="checkParagraph()"></textarea>
+    <button onclick="submitGame()">Submit</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const mobile = // localStorage removed - replaced by FirebasegetItem("loggedInUser");
+    if (!mobile) {
+      alert("Please login first.");
+      window.location.href = "login.html";
+    }
+
+    let user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
+    if (!user) {
+      alert("User not found.");
+      window.location.href = "login.html";
+    }
+
+    let bet = parseInt(// localStorage removed - replaced by FirebasegetItem("typing_bet")) || 10;
+
+    // ✅ Coin deduction हटाया गया है — अब सिर्फ पहले page (typing-game.html) में coin कटेगा
+    document.getElementById("username").textContent = user.name;
+    document.getElementById("balance").textContent = user.balance;
+
+    const paragraphs = [
+      "Typing fast is a useful skill for many people.",
+      "Practice typing daily to improve your speed.",
+      "Games that involve skills are fun and rewarding.",
+      "Success comes from consistent effort and focus.",
+      "SkillSena is a platform for skill-based gaming.",
+      "Stay motivated and type with full concentration.",
+      "Hard work always beats talent when talent doesn't work hard.",
+      "Consistency in practice leads to mastery over time.",
+      "Winners are not afraid of losing; they learn from it.",
+      "Daily practice sharpens your brain and boosts speed."
+    ];
+
+    let usedIndexes = JSON.parse(// localStorage removed - replaced by FirebasegetItem("used_paragraphs_" + mobile)) || [];
+    let currentPara = "";
+    let totalCorrectWords = 0;
+    let timer = 60;
+    let interval;
+
+    function getRandomParagraph() {
+      if (usedIndexes.length === paragraphs.length) usedIndexes = [];
+      let index;
+      do {
+        index = Math.floor(Math.random() * paragraphs.length);
+      } while (usedIndexes.includes(index));
+      usedIndexes.push(index);
+      // localStorage removed - replaced by FirebasesetItem("used_paragraphs_" + mobile, JSON.stringify(usedIndexes));
+      currentPara = paragraphs[index];
+      document.getElementById("paragraph").textContent = currentPara;
+    }
+
+    function countCorrectWords(input, original) {
+      const inputWords = input.trim().split(/\s+/);
+      const originalWords = original.trim().split(/\s+/);
+      let count = 0;
+      for (let i = 0; i < originalWords.length; i++) {
+        if (inputWords[i] === originalWords[i]) count++;
+      }
+      return count;
+    }
+
+    function checkParagraph() {
+      const typed = document.getElementById("typed").value.trim();
+      const inputWords = typed.split(/\s+/);
+      const originalWords = currentPara.trim().split(/\s+/);
+      if (inputWords.length >= originalWords.length) {
+        let correct = true;
+        for (let i = 0; i < originalWords.length; i++) {
+          if (inputWords[i] !== originalWords[i]) {
+            correct = false;
+            break;
+          }
+        }
+        if (correct) {
+          totalCorrectWords += originalWords.length;
+          document.getElementById("typed").value = "";
+          getRandomParagraph();
+        }
+      }
+    }
+
+    function submitGame() {
+      clearInterval(interval);
+      const finalCorrect = countCorrectWords(document.getElementById("typed").value, currentPara);
+      totalCorrectWords += finalCorrect;
+
+      let winCoins = 0;
+      let resultStatus = "Loss";
+      let resultText = `✅ Correct Words: ${totalCorrectWords}`;
+
+      if (totalCorrectWords >= 25) {
+        resultStatus = "Win";
+        winCoins = bet + Math.floor((bet / 10) * totalCorrectWords);
+        user.balance += winCoins;
+        resultText += `\n🎉 You Won ₹${winCoins} (Including Bet)`;
+      } else {
+        resultText += `\n😢 You Lost ₹${bet}`;
+      }
+
+      document.getElementById("result").textContent = resultText;
+      // localStorage removed - replaced by FirebasesetItem("user_" + mobile, JSON.stringify(user));
+      document.getElementById("balance").textContent = user.balance;
+
+      // Save result
+      const resultKey = "game_results_" + mobile;
+      const results = JSON.parse(// localStorage removed - replaced by FirebasegetItem(resultKey)) || [];
+      const newResult = {
+        game: "Typing Game",
+        bet: bet,
+        correct: totalCorrectWords,
+        amount: winCoins,
+        status: resultStatus,
+        time: new Date().toLocaleString()
+      };
+      results.unshift(newResult);
+      // localStorage removed - replaced by FirebasesetItem(resultKey, JSON.stringify(results));
+
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 5000);
+    }
+
+    function startTimer() {
+      interval = setInterval(() => {
+        timer--;
+        document.getElementById("timer").textContent = `⏱ Time Left: ${timer}s`;
+        if (timer <= 0) {
+          clearInterval(interval);
+          submitGame();
+        }
+      }, 1000);
+    }
+
+    getRandomParagraph();
+    startTimer();
+  </script>
+</body>
+</html>

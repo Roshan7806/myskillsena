@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Game Toggle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+    }
+    input[type="checkbox"] {
+      transform: scale(1.5);
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 20px;
+      background: green;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: darkgreen;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+  <div class="box">
+    <h2>🛠 Game Status Control</h2>
+
+    <label>Fast Math Game <input type="checkbox" id="fastMath" /></label>
+    <label>Typing Game <input type="checkbox" id="typing" /></label>
+    <label>Deposit <input type="checkbox" id="deposit" /></label>
+    <label>Withdrawal <input type="checkbox" id="withdrawal" /></label>
+    <label>Game Results <input type="checkbox" id="results" /></label>
+
+    <button onclick="saveSettings()">💾 Save Settings</button>
+  </div>
+
+  <script>
+    // पहले से saved settings लोड करो
+    const savedSettings = JSON.parse(// localStorage removed - replaced by FirebasegetItem("game_status_settings")) || {};
+
+    document.getElementById("fastMath").checked = savedSettings.fastMath === "on";
+    document.getElementById("typing").checked = savedSettings.typing === "on";
+    document.getElementById("deposit").checked = savedSettings.deposit === "on";
+    document.getElementById("withdrawal").checked = savedSettings.withdrawal === "on";
+    document.getElementById("results").checked = savedSettings.results === "on";
+
+    function saveSettings() {
+      const settings = {
+        fastMath: document.getElementById("fastMath").checked ? "on" : "off",
+        typing: document.getElementById("typing").checked ? "on" : "off",
+        deposit: document.getElementById("deposit").checked ? "on" : "off",
+        withdrawal: document.getElementById("withdrawal").checked ? "on" : "off",
+        results: document.getElementById("results").checked ? "on" : "off"
+      };
+
+      // localStorage removed - replaced by FirebasesetItem("game_status_settings", JSON.stringify(settings));
+      alert("✅ Settings saved successfully!");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - SKILLSENA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f6f9fc, #e0f7fa);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
+    }
+
+    .form-container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .form-container img {
+      width: 160px;
+      margin-bottom: 15px;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    p {
+      margin-top: 15px;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+  <div class="form-container">
+    <!-- 👇 Logo Image -->
+    <img src="skillsena.png" alt="Skillsena Logo">
+
+    <h2>Login to SKILLSENA</h2>
+    <form onsubmit="loginUser(); return false;">
+      <input type="tel" id="mobile" placeholder="Mobile Number" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+      <p>New user? <a href="register.html">Register here</a></p>
+      <p><a href="reset-password.html">🔑 Forgot Password?</a></p>
+    </form>
+  </div>
+
+  <script>
+    function loginUser() {
+      const mobile = document.getElementById("mobile").value.trim();
+      const password = document.getElementById("password").value;
+
+      const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
+
+      if (!user) {
+        alert("User not found. Please register first.");
+        return;
+      }
+
+      if (user.status === "blocked") {
+        alert("🚫 Your account is blocked by admin. Please contact support.");
+        return;
+      }
+
+      if (user.password !== password) {
+        alert("Incorrect password.");
+        return;
+      }
+
+      // ✅ Save login session
+      // localStorage removed - replaced by FirebasesetItem("loggedInUser", mobile);
+      alert("Login successful!");
+      window.location.href = "dashboard.html";
+    }
+  </script>
+</body>
+</html>

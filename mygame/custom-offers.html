@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Custom Offers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f2f2f2;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .box {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    .btn-secondary {
+      background-color: #007bff;
+    }
+
+    .btn-secondary:hover {
+      background-color: #0056b3;
+    }
+
+    .success {
+      color: green;
+      font-weight: bold;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+
+  <h2>🎁 Send Custom Bonus</h2>
+
+  <div class="box">
+    <input type="text" id="mobile" placeholder="Enter mobile (optional)">
+    <input type="number" id="coins" placeholder="Bonus Coins">
+    <textarea id="message" placeholder="Bonus Message"></textarea>
+    
+    <button onclick="sendBonusToUser()">🎯 Give Bonus to User</button>
+    <button class="btn-secondary" onclick="sendBonusToAll()">🌍 Send Bonus to All Users</button>
+
+    <div id="status" class="success"></div>
+  </div>
+
+  <script>
+    // ✅ Send to one user
+    function sendBonusToUser() {
+      const mobile = document.getElementById("mobile").value.trim();
+      const coins = parseInt(document.getElementById("coins").value.trim());
+      const message = document.getElementById("message").value.trim();
+
+      if (!mobile || isNaN(coins) || !message) {
+        alert("Please fill mobile, coins and message properly.");
+        return;
+      }
+
+      const userKey = "user_" + mobile;
+      const userData = // localStorage removed - replaced by FirebasegetItem(userKey);
+
+      if (!userData) {
+        alert("User not found!");
+        return;
+      }
+
+      const user = JSON.parse(userData);
+      user.balance += coins;
+
+      // Save updated user
+      // localStorage removed - replaced by FirebasesetItem(userKey, JSON.stringify(user));
+
+      // Save bonus message for popup
+      // localStorage removed - replaced by FirebasesetItem("bonus_message_" + mobile, message + " (+₹" + coins + ")");
+
+      document.getElementById("status").innerText = "✅ Bonus sent to " + mobile + "!";
+    }
+
+    // ✅ Send to all users
+    function sendBonusToAll() {
+      const coins = parseInt(document.getElementById("coins").value.trim());
+      const message = document.getElementById("message").value.trim();
+
+      if (isNaN(coins) || !message) {
+        alert("Please enter coins and message!");
+        return;
+      }
+
+      let count = 0;
+      for (let key in localStorage) {
+        if (key.startsWith("user_")) {
+          const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key));
+          user.balance += coins;
+          // localStorage removed - replaced by FirebasesetItem(key, JSON.stringify(user));
+
+          const mobile = user.mobile;
+          // localStorage removed - replaced by FirebasesetItem("bonus_message_" + mobile, message + " (+₹" + coins + ")");
+          count++;
+        }
+      }
+
+      document.getElementById("status").innerText = "🎉 Bonus sent to " + count + " users!";
+    }
+  </script>
+
+</body>
+</html>

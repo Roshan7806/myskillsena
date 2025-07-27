@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="status-checker.js"></script>
+  <script>
+    checkGameAccess("deposit");
+  </script>
+  <meta charset="UTF-8" />
+  <title>Deposit Coins - SkillSena</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 16px;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #ffcc00;
+      border: none;
+      color: #000;
+      font-weight: bold;
+      font-size: 18px;
+      border-radius: 8px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+
+    #qrImage {
+      display: block;
+      margin: 20px auto;
+      width: 300px;
+      height: 300px;
+      object-fit: contain;
+      border: 2px solid #fff;
+      border-radius: 8px;
+    }
+
+    .history {
+      margin-top: 30px;
+    }
+
+    .history-item {
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+
+  <div class="container">
+    <h2>💰 Deposit Coins</h2>
+
+    <img id="qrImage" src="" alt="Scan QR to Pay" />
+
+    <label>Amount</label>
+    <select id="amount">
+      <option value="100">₹100</option>
+      <option value="200">₹200</option>
+      <option value="300">₹300</option>
+      <option value="500">₹500</option>
+      <option value="1000">₹1000</option>
+    </select>
+
+    <label>Transaction ID</label>
+    <input type="text" id="txnId" placeholder="Enter Transaction ID" />
+
+    <label>UTR Number</label>
+    <input type="text" id="utr" placeholder="Enter UTR Number" />
+
+    <button id="submitBtn" onclick="submitDeposit()">Submit</button>
+
+    <div class="history">
+      <h3>🧾 Deposit History</h3>
+      <div id="depositHistory"></div>
+    </div>
+  </div>
+
+  <script>
+    const mobile = // localStorage removed - replaced by FirebasegetItem("loggedInUser");
+    const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
+    const depositKey = "deposit_requests_" + mobile;
+
+    // QR Image Logic
+    const qrList = [
+      { src: "images/qr1.png", weight: 0.2 },
+      { src: "images/qr2.png", weight: 0.2 },
+      { src: "images/qr3.png", weight: 0.6 }
+    ];
+
+    function pickRandomQR() {
+      const rand = Math.random();
+      let total = 0;
+      for (const qr of qrList) {
+        total += qr.weight;
+        if (rand <= total) return qr.src;
+      }
+      return qrList[0].src;
+    }
+
+    const qrImageSrc = pickRandomQR();
+    const qrName = qrImageSrc.split('/').pop().replace('.png', '');
+    document.getElementById("qrImage").src = qrImageSrc;
+
+    // ✅ Final submitDeposit
+    function submitDeposit() {
+      const amount = parseInt(document.getElementById("amount").value);
+      const txnId = document.getElementById("txnId").value.trim();
+      const utr = document.getElementById("utr").value.trim();
+
+      if (!txnId || !utr) {
+        alert("Please enter both Transaction ID and UTR Number.");
+        return;
+      }
+
+      const userDeposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem(depositKey)) || [];
+
+      // 🔐 UTR Duplicate Check
+      const allDeposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests") || "[]");
+      if (allDeposits.find(d => d.utr === utr)) {
+        alert("This UTR number already exists.");
+        return;
+      }
+
+      const newDeposit = {
+        name: user.name,
+        mobile: user.mobile,
+        amount,
+        txnId,
+        utr,
+        qr: qrName,
+        status: "Pending",
+        time: new Date().toLocaleString()
+      };
+
+      // ✅ User-wise Save
+      userDeposits.unshift(newDeposit);
+      // localStorage removed - replaced by FirebasesetItem(depositKey, JSON.stringify(userDeposits));
+
+      // ✅ Global Admin Save
+      allDeposits.unshift(newDeposit);
+      // localStorage removed - replaced by FirebasesetItem("deposit_requests", JSON.stringify(allDeposits));
+
+      // Disable button and show message
+      document.getElementById("submitBtn").disabled = true;
+      document.getElementById("submitBtn").innerText = "Submitted ✅";
+
+      showHistory();
+    }
+
+    function showHistory() {
+      const deposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem(depositKey)) || [];
+      const historyDiv = document.getElementById("depositHistory");
+      historyDiv.innerHTML = "";
+
+      deposits.forEach(dep => {
+        historyDiv.innerHTML += `
+          <div class="history-item">
+            <div>Amount: ₹${dep.amount}</div>
+            <div>Txn ID: ${dep.txnId}</div>
+            <div>UTR: ${dep.utr}</div>
+            <div>QR Used: ${dep.qr}</div>
+            <div>Status: <span class="status">${dep.status}</span></div>
+            <div><small>${dep.time}</small></div>
+          </div>
+        `;
+      });
+    }
+
+    showHistory();
+  </script>
+</body>
+</html>

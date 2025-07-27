@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="status-checker.js"></script>
+<script>
+  checkGameAccess("results");
+</script>
+  <meta charset="UTF-8" />
+  <title>Game Results - SkillSena</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      color: #333;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #222;
+    }
+
+    .result-item {
+      background: #f9f9f9;
+      border-left: 5px solid #00c853;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+    }
+
+    .result-item.loss {
+      border-left-color: #d50000;
+    }
+
+    .result-item h4 {
+      margin: 0 0 8px;
+    }
+
+    .result-item p {
+      margin: 4px 0;
+      font-size: 15px;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+
+    .back-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      margin-top: 20px;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+    }
+
+    .back-btn:hover {
+      background: #0056b3;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+  <div class="container">
+    <h2>🎯 Game Results</h2>
+    <div id="results"></div>
+    <a href="dashboard.html" class="back-btn">🔙 Back to Dashboard</a>
+  </div>
+
+  <script>
+    const mobile = // localStorage removed - replaced by FirebasegetItem("loggedInUser");
+    const resultKey = "game_results_" + mobile;
+
+    const results = JSON.parse(// localStorage removed - replaced by FirebasegetItem(resultKey)) || [];
+
+    const resultsDiv = document.getElementById("results");
+
+    if (results.length === 0) {
+      resultsDiv.innerHTML = "<p>No game results found yet.</p>";
+    } else {
+      results.forEach(result => {
+        const item = document.createElement("div");
+        item.className = "result-item " + (result.status === "Win" ? "" : "loss");
+        item.innerHTML = `
+          <h4>🎮 ${result.game}</h4>
+          <p>✅ Correct Answers: ${result.correct}</p>
+          <p>💰 Bet Amount: ₹${result.bet}</p>
+          <p>🏆 Coins ${result.status === "Win" ? "Won" : "Lost"}: ₹${result.amount}</p>
+          <p class="status">📌 Status: ${result.status}</p>
+          <p>🕒 ${result.time}</p>
+        `;
+        resultsDiv.appendChild(item);
+      });
+    }
+  </script>
+</body>
+</html>

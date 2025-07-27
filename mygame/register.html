@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - SKILLSENA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f6f9fc, #e0f7fa);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
+    }
+
+    .form-container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .form-container img {
+      width: 160px;
+      margin-bottom: 15px;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #28a745;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    p {
+      margin-top: 15px;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+  <div class="form-container">
+    <img src="skillsena.png" alt="Skillsena Logo">
+    <h2>Register on SKILLSENA</h2>
+    <form onsubmit="registerUser(); return false;">
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="tel" id="mobile" placeholder="Mobile Number" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <input type="password" id="confirm" placeholder="Confirm Password" required>
+      <input type="text" id="refer" placeholder="Referral Code (Optional)">
+      <button type="submit">Register</button>
+      <p>Already have an account? <a href="login.html">Login here</a></p>
+    </form>
+  </div>
+
+  <script>
+    function registerUser() {
+      const name = document.getElementById("name").value.trim();
+      const mobile = document.getElementById("mobile").value.trim();
+      const password = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm").value;
+      const referCode = document.getElementById("refer").value.trim();
+
+      if (!name || !mobile || !password || !confirm) {
+        alert("Please fill all required fields.");
+        return;
+      }
+
+      if (password !== confirm) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      // Check if mobile already registered
+      if (// localStorage removed - replaced by FirebasegetItem("user_" + mobile)) {
+        alert("This mobile number is already registered.");
+        return;
+      }
+
+      // Check if refer code is valid
+      let reward = 0;
+      if (referCode !== "") {
+        let referUser = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + referCode));
+        if (referUser) {
+          reward = 5;
+          referUser.balance += 5;
+          // localStorage removed - replaced by FirebasesetItem("user_" + referCode, JSON.stringify(referUser));
+        } else {
+          alert("Invalid referral code.");
+          return;
+        }
+      }
+
+      const newUser = {
+        name,
+        mobile,
+        password,
+        balance: reward
+      };
+
+      // localStorage removed - replaced by FirebasesetItem("user_" + mobile, JSON.stringify(newUser));
+      alert("Registration successful!");
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

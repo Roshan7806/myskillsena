@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="status-checker.js"></script>
+<script>
+  checkGameAccess("withdrawal");
+</script>
+  <meta charset="UTF-8" />
+  <title>Withdraw Coins - SkillSena</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 16px;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #ffcc00;
+      border: none;
+      color: #000;
+      font-weight: bold;
+      font-size: 18px;
+      border-radius: 8px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    .history {
+      margin-top: 30px;
+    }
+
+    .history-item {
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+
+  <div class="container">
+    <h2>💸 Withdraw Coins</h2>
+
+    <label>Enter Amount (₹200 - ₹25,000)</label>
+    <input type="number" id="amount" placeholder="Enter amount to withdraw" min="200" max="25000" />
+
+    <label>Your UPI ID</label>
+    <input type="text" id="upi" placeholder="e.g., user@upi" />
+
+    <label>Login Password</label>
+    <input type="password" id="password" placeholder="Enter your login password" />
+
+    <button onclick="submitWithdrawal()">Withdraw</button>
+
+    <div class="history">
+      <h3>🧾 Withdrawal History</h3>
+      <div id="withdrawHistory"></div>
+    </div>
+  </div>
+
+  <script>
+    const mobile = // localStorage removed - replaced by FirebasegetItem("loggedInUser");
+    let user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
+    let withdrawKey = "withdrawals_" + mobile;
+    let allUPIs = JSON.parse(// localStorage removed - replaced by FirebasegetItem("used_upis")) || [];
+
+    function showHistory() {
+      const data = JSON.parse(// localStorage removed - replaced by FirebasegetItem(withdrawKey)) || [];
+      const historyDiv = document.getElementById("withdrawHistory");
+      historyDiv.innerHTML = "";
+      data.forEach(w => {
+        historyDiv.innerHTML += `
+          <div class="history-item">
+            <div>Amount: ₹${w.amount}</div>
+            <div>UPI: ${w.upi}</div>
+            <div>Status: <span class="status">${w.status}</span></div>
+            <div><small>${w.time}</small></div>
+          </div>
+        `;
+      });
+    }
+
+    function submitWithdrawal() {
+      const amount = parseInt(document.getElementById("amount").value);
+      const upi = document.getElementById("upi").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!amount || !upi || !password) {
+        alert("Please fill all fields.");
+        return;
+      }
+
+      if (amount < 200 || amount > 25000) {
+        alert("Amount must be between ₹200 and ₹25,000.");
+        return;
+      }
+
+      if (user.balance < amount) {
+        alert("Not enough coins to withdraw.");
+        return;
+      }
+
+      if (password !== user.password) {
+        alert("Incorrect login password.");
+        return;
+      }
+
+      // 24 hour check
+      let withdraws = JSON.parse(// localStorage removed - replaced by FirebasegetItem(withdrawKey)) || [];
+      const last24h = withdraws.filter(w => {
+        const diff = (new Date() - new Date(w.time)) / (1000 * 60 * 60);
+        return diff <= 24;
+      });
+      if (last24h.length >= 3) {
+        alert("You can only withdraw 3 times in 24 hours.");
+        return;
+      }
+
+      // UPI Save Once
+      if (!user.upi) {
+        if (allUPIs.includes(upi)) {
+          alert("This UPI is already used in another account.");
+          return;
+        }
+        user.upi = upi;
+        allUPIs.push(upi);
+        // localStorage removed - replaced by FirebasesetItem("used_upis", JSON.stringify(allUPIs));
+      } else if (user.upi !== upi) {
+        alert("You can't change your UPI once set.");
+        return;
+      }
+
+      // Deduct coins immediately
+      user.balance -= amount;
+      // localStorage removed - replaced by FirebasesetItem("user_" + mobile, JSON.stringify(user));
+
+      withdraws.unshift({
+        amount,
+        upi,
+        status: "Pending",
+        time: new Date().toLocaleString()
+      });
+      // localStorage removed - replaced by FirebasesetItem(withdrawKey, JSON.stringify(withdraws));
+
+      alert("Withdrawal request submitted. Coins deducted.");
+      showHistory();
+    }
+
+    // Show old history
+    showHistory();
+  </script>
+</body>
+</html>

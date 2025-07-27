@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Game Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #fc5c7d, #6a82fb);
+      margin: 0;
+      padding: 20px;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 16px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label, input, select {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      background-color: #ffcc00;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .result-box {
+      margin-top: 20px;
+    }
+
+    .result-item {
+      background: rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .result-item.win {
+      border-left: 5px solid #00e676;
+    }
+
+    .result-item.loss {
+      border-left: 5px solid #ff1744;
+    }
+
+    .result-item h4 {
+      margin: 0 0 8px;
+    }
+
+    .result-item p {
+      margin: 4px 0;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+  </style>
+
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+    authDomain: "apnaskillsena.firebaseapp.com",
+    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+    projectId: "apnaskillsena",
+    storageBucket: "apnaskillsena.firebasestorage.app",
+    messagingSenderId: "149529300642",
+    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+</head>
+<body>
+  <div class="container">
+    <h2>🎮 All User Game Results</h2>
+
+    <label>Search by Mobile Number</label>
+    <input type="text" id="mobileSearch" placeholder="Enter mobile number">
+
+    <button onclick="loadResults()">Search</button>
+
+    <div class="result-box" id="resultBox"></div>
+  </div>
+
+  <script>
+    function loadResults() {
+      const mobile = document.getElementById("mobileSearch").value.trim();
+      if (!mobile) {
+        alert("Please enter a mobile number.");
+        return;
+      }
+
+      const resultKey = "game_results_" + mobile;
+      const data = JSON.parse(// localStorage removed - replaced by FirebasegetItem(resultKey)) || [];
+
+      const resultBox = document.getElementById("resultBox");
+      resultBox.innerHTML = "";
+
+      if (data.length === 0) {
+        resultBox.innerHTML = "<p>No game results found for this user.</p>";
+        return;
+      }
+
+      data.forEach(result => {
+        const betAmount = result.coins || result.bet || 0;
+        const correct = result.correct || 0;
+        const status = result.status || (correct >= 4 ? "Win" : "Loss");
+        const wonOrLost = status === "Win" ? (result.amount || correct * (betAmount / 10)) : 0;
+        const time = result.time || "Time not recorded";
+        const game = result.game || "Unknown";
+
+        const div = document.createElement("div");
+        div.className = "result-item " + (status === "Win" ? "win" : "loss");
+        div.innerHTML = `
+          <h4>🎯 Game: ${game}</h4>
+          <p>✅ Correct Answers: ${correct}</p>
+          <p>💰 Bet Amount: ₹${betAmount}</p>
+          <p>🏆 Coins ${status === "Win" ? "Won" : "Lost"}: ₹${status === "Win" ? wonOrLost : betAmount}</p>
+          <p class="status">📌 Status: ${status}</p>
+          <p>🕒 ${time}</p>
+        `;
+        resultBox.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
