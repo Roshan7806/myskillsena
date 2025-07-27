@@ -2,93 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Deposit Coins - SkillSena</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deposit - SkillSena</title>
   <style>
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #00c6ff, #0072ff);
+      margin: 0;
+      background: linear-gradient(to right, #36d1dc, #5b86e5);
       color: #fff;
-      padding: 20px;
+      min-height: 100vh;
     }
-
+    .top-bar {
+      padding: 12px 20px;
+      background: rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+    }
     .container {
-      max-width: 500px;
-      margin: auto;
-      background: rgba(255,255,255,0.1);
-      padding: 20px;
+      max-width: 400px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
       border-radius: 16px;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      backdrop-filter: blur(8px);
     }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
     label {
       display: block;
       margin-top: 15px;
+      margin-bottom: 5px;
     }
-
-    select, input {
+    select, input, textarea {
       width: 100%;
-      padding: 10px;
-      font-size: 16px;
+      padding: 12px;
       border-radius: 8px;
       border: none;
-      margin-top: 5px;
+      font-size: 16px;
     }
-
     button {
+      margin-top: 20px;
       width: 100%;
       padding: 14px;
+      font-size: 18px;
       background: #ffcc00;
-      border: none;
       color: #000;
       font-weight: bold;
-      font-size: 18px;
+      border: none;
       border-radius: 8px;
-      margin-top: 20px;
       cursor: pointer;
     }
-
-    button:disabled {
-      background: gray;
-      cursor: not-allowed;
+    #qrcode {
+      margin-top: 20px;
+      text-align: center;
     }
-
-    #qrImage {
-      display: block;
-      margin: 20px auto;
-      width: 300px;
-      height: 300px;
-      object-fit: contain;
-      border: 2px solid #fff;
-      border-radius: 8px;
-    }
-
-    .history {
-      margin-top: 30px;
-    }
-
-    .history-item {
-      background: rgba(0,0,0,0.2);
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-    }
-
-    .status {
-      font-weight: bold;
+    #qrcode img {
+      width: 200px;
     }
   </style>
 
-  <!-- Firebase Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
@@ -99,147 +73,90 @@
       messagingSenderId: "149529300642",
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    firebase.initializeApp(firebaseConfig);
   </script>
 </head>
 <body>
+  <div class="top-bar">
+    <div>👤 <span id="username">User</span></div>
+    <div>💰 Coins: ₹<span id="balance">0</span></div>
+  </div>
 
   <div class="container">
-    <h2>💰 Deposit Coins</h2>
-
-    <img id="qrImage" src="" alt="Scan QR to Pay" />
-
-    <label>Amount</label>
+    <h2>Deposit Coins</h2>
+    <label for="amount">Amount</label>
     <select id="amount">
       <option value="100">₹100</option>
       <option value="200">₹200</option>
       <option value="300">₹300</option>
       <option value="500">₹500</option>
-      <option value="1000">₹1000</option>
     </select>
 
-    <label>Transaction ID</label>
-    <input type="text" id="txnId" placeholder="Enter Transaction ID" />
+    <label for="txnid">Transaction ID</label>
+    <input type="text" id="txnid" placeholder="Enter Transaction ID" />
 
-    <label>UTR Number</label>
-    <input type="text" id="utr" placeholder="Enter UTR Number" />
-
-    <button id="submitBtn" onclick="submitDeposit()">Submit</button>
-
-    <div class="history">
-      <h3>🧾 Deposit History</h3>
-      <div id="depositHistory"></div>
+    <div id="qrcode">
+      <img src="qrcode.png" alt="QR Code" />
     </div>
+
+    <button onclick="submitDeposit()">Submit Deposit</button>
   </div>
 
   <script>
-    // ✅ QR Logic
-    const qrList = [
-      { src: "images/qr1.png", weight: 0.2 },
-      { src: "images/qr2.png", weight: 0.2 },
-      { src: "images/qr3.png", weight: 0.6 }
-    ];
-    function pickRandomQR() {
-      const rand = Math.random();
-      let total = 0;
-      for (const qr of qrList) {
-        total += qr.weight;
-        if (rand <= total) return qr.src;
-      }
-      return qrList[0].src;
+    // ✅ Sync session from localStorage if needed
+    if (!sessionStorage.getItem("mobile") && localStorage.getItem("mobile")) {
+      sessionStorage.setItem("mobile", localStorage.getItem("mobile"));
     }
-    const qrImageSrc = pickRandomQR();
-    const qrName = qrImageSrc.split('/').pop().replace('.png', '');
-    document.getElementById("qrImage").src = qrImageSrc;
 
-    // ✅ Check user session
-    const userId = sessionStorage.getItem("userId");
-    if (!userId) {
+    const mobile = sessionStorage.getItem("mobile");
+
+    if (!mobile) {
       alert("Please login first.");
       window.location.href = "login.html";
     }
 
-    // ✅ Submit Deposit
-    async function submitDeposit() {
-      const amount = parseInt(document.getElementById("amount").value);
-      const txnId = document.getElementById("txnId").value.trim();
-      const utr = document.getElementById("utr").value.trim();
-
-      if (!txnId || !utr) {
-        alert("Please enter both Transaction ID and UTR Number.");
-        return;
-      }
-
-      // Check for duplicate UTR
-      const allRef = db.ref("deposit_requests");
-      const snapshot = await allRef.once("value");
-      let isDuplicate = false;
-      snapshot.forEach(child => {
-        const dep = child.val();
-        if (dep.utr === utr) isDuplicate = true;
+    const userRef = firebase.database().ref("users/" + mobile);
+    userRef.once("value")
+      .then((snapshot) => {
+        if (!snapshot.exists()) {
+          alert("User not found.");
+          sessionStorage.clear();
+          window.location.href = "login.html";
+        } else {
+          const user = snapshot.val();
+          document.getElementById("username").textContent = user.name || "User";
+          document.getElementById("balance").textContent = user.balance || 0;
+        }
       });
-      if (isDuplicate) {
-        alert("This UTR number already exists.");
+
+    function submitDeposit() {
+      const amount = parseInt(document.getElementById("amount").value);
+      const txnid = document.getElementById("txnid").value.trim();
+
+      if (!txnid) {
+        alert("Please enter Transaction ID");
         return;
       }
 
-      // Fetch user info
-      const userSnap = await db.ref("users/" + userId).once("value");
-      if (!userSnap.exists()) {
-        alert("User not found.");
-        return;
-      }
-      const user = userSnap.val();
-
-      const newDeposit = {
-        name: user.name || "User",
-        mobile: user.mobile || "N/A",
+      const depositRef = firebase.database().ref("deposits").push();
+      const depositData = {
+        mobile,
         amount,
-        txnId,
-        utr,
-        qr: qrName,
-        status: "Pending",
-        time: new Date().toLocaleString()
+        txnid,
+        status: "pending",
+        timestamp: new Date().toISOString()
       };
 
-      // Save under user
-      const userDepRef = db.ref("users/" + userId + "/deposits");
-      await userDepRef.push(newDeposit);
-
-      // Save under global list
-      const adminDepRef = db.ref("deposit_requests");
-      await adminDepRef.push(newDeposit);
-
-      document.getElementById("submitBtn").disabled = true;
-      document.getElementById("submitBtn").innerText = "Submitted ✅";
-
-      showHistory();
+      depositRef.set(depositData)
+        .then(() => {
+          alert("Deposit request submitted!");
+          document.getElementById("txnid").value = "";
+        })
+        .catch((error) => {
+          console.error("Deposit error:", error);
+          alert("Something went wrong.");
+        });
     }
-
-    // ✅ Show History
-    async function showHistory() {
-      const historyRef = db.ref("users/" + userId + "/deposits");
-      const snapshot = await historyRef.once("value");
-      const historyDiv = document.getElementById("depositHistory");
-      historyDiv.innerHTML = "";
-
-      snapshot.forEach(child => {
-        const dep = child.val();
-        historyDiv.innerHTML += `
-          <div class="history-item">
-            <div>Amount: ₹${dep.amount}</div>
-            <div>Txn ID: ${dep.txnId}</div>
-            <div>UTR: ${dep.utr}</div>
-            <div>QR Used: ${dep.qr}</div>
-            <div>Status: <span class="status">${dep.status}</span></div>
-            <div><small>${dep.time}</small></div>
-          </div>
-        `;
-      });
-    }
-
-    showHistory();
   </script>
 </body>
 </html>
