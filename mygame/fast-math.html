@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fast Math Game - SkillSena</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -118,54 +118,65 @@
   </div>
 
   <script>
+    // Check if user is logged in
     const userId = sessionStorage.getItem("userId");
-
     if (!userId) {
       alert("Please login first.");
       window.location.href = "login.html";
-    } else {
-      const userRef = firebase.database().ref("users/" + userId);
-      userRef.once("value").then((snapshot) => {
-        const user = snapshot.val();
-        if (!user) {
+    }
+
+    // Check if user exists in Firebase
+    const userRef = firebase.database().ref("users/" + userId);
+    userRef.once("value")
+      .then((snapshot) => {
+        if (!snapshot.exists()) {
           alert("User not found.");
           sessionStorage.clear();
           window.location.href = "login.html";
         } else {
+          const user = snapshot.val();
           document.getElementById("username").textContent = user.name || "User";
           document.getElementById("balance").textContent = user.balance || 0;
         }
-      }).catch((error) => {
-        console.error("Firebase error:", error);
-        alert("Error fetching user data.");
+      })
+      .catch((error) => {
+        console.error("Error getting user:", error);
+        alert("Something went wrong. Try again.");
         sessionStorage.clear();
         window.location.href = "login.html";
       });
-    }
 
     function startGame() {
       const bet = parseInt(document.getElementById("bet").value);
-
       const userRef = firebase.database().ref("users/" + userId);
-      userRef.once("value").then((snapshot) => {
-        const user = snapshot.val();
-        if (!user || user.balance === undefined) {
-          alert("User data not found.");
-          return;
-        }
 
-        if (user.balance < bet) {
-          alert("❌ You don't have enough coins!");
-          return;
-        }
+      userRef.once("value")
+        .then((snapshot) => {
+          const user = snapshot.val();
+          if (!user || user.balance === undefined) {
+            alert("User data not found.");
+            return;
+          }
 
-        const newBalance = user.balance - bet;
-        userRef.update({ balance: newBalance });
+          if (user.balance < bet) {
+            alert("❌ You don't have enough coins!");
+            return;
+          }
 
-        sessionStorage.setItem("current_bet", bet);
+          // Deduct coins
+          const newBalance = user.balance - bet;
+          userRef.update({ balance: newBalance });
 
-        window.location.href = "play-fast-math.html";
-      });
+          // Save bet
+          sessionStorage.setItem("current_bet", bet);
+
+          // Redirect to game
+          window.location.href = "play-fast-math.html";
+        })
+        .catch((error) => {
+          console.error("Start game error:", error);
+          alert("Error starting game. Try again.");
+        });
     }
   </script>
 </body>
