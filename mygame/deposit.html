@@ -123,19 +123,21 @@
   </div>
 
   <script>
-    const mobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
-    if (!mobile) {
+    // Fix: Ensure sessionStorage gets value if only localStorage has it
+    const storedMobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
+    if (!storedMobile) {
       alert("❌ Please login first.");
       window.location.href = "login.html";
     }
+    sessionStorage.setItem("mobile", storedMobile); // Sync back
+    const mobile = sessionStorage.getItem("mobile");
 
-    // Random QR
+    // Random QR Picker
     const qrList = [
       { src: "images/qr1.png", weight: 0.2 },
       { src: "images/qr2.png", weight: 0.2 },
       { src: "images/qr3.png", weight: 0.6 }
     ];
-
     function pickRandomQR() {
       const rand = Math.random();
       let total = 0;
@@ -169,15 +171,8 @@
 
         const userData = snap.val();
 
-        db.ref("deposit_requests").once("value").then((allSnap) => {
-          let duplicate = false;
-          allSnap.forEach(child => {
-            if (child.val().utr === utr) {
-              duplicate = true;
-            }
-          });
-
-          if (duplicate) {
+        db.ref("deposit_requests").orderByChild("utr").equalTo(utr).once("value", (snapshot) => {
+          if (snapshot.exists()) {
             alert("❌ This UTR number already exists.");
             return;
           }
@@ -200,7 +195,7 @@
             document.getElementById("submitBtn").disabled = true;
             document.getElementById("submitBtn").innerText = "Submitted ✅";
             alert("✅ Deposit request submitted!");
-            showHistory(); // Refresh history
+            showHistory(); // Refresh
           }).catch((err) => {
             console.error("Error:", err);
             alert("❌ Something went wrong. Try again.");
@@ -212,6 +207,8 @@
     function showHistory() {
       const historyDiv = document.getElementById("depositHistory");
       const ref = db.ref("user_deposits/" + mobile);
+
+      ref.off(); // Remove old listeners before attaching new one
 
       ref.on("value", (snap) => {
         historyDiv.innerHTML = "";
@@ -240,6 +237,5 @@
 
     window.onload = showHistory;
   </script>
-
 </body>
 </html>
