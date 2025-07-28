@@ -2,60 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Deposit - SkillSena</title>
+  <title>Deposit Coins - SkillSena</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #1c92d2, #f2fcfe);
       margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      color: #fff;
       padding: 20px;
     }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 16px;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
     h2 {
-      color: #333;
       text-align: center;
+      margin-bottom: 20px;
     }
-    .form-box, .history {
-      max-width: 400px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+
+    label {
+      display: block;
+      margin-top: 15px;
     }
-    input, select, button {
+
+    select, input {
       width: 100%;
-      margin: 10px 0;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      padding: 10px;
       font-size: 16px;
-    }
-    button {
-      background: #28a745;
-      color: white;
+      border-radius: 8px;
       border: none;
+      margin-top: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #ffcc00;
+      border: none;
+      color: #000;
       font-weight: bold;
+      font-size: 18px;
+      border-radius: 8px;
+      margin-top: 20px;
       cursor: pointer;
     }
-    button:hover {
-      background: #218838;
+
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
     }
-    .qrcode {
-      text-align: center;
-      margin-top: 10px;
+
+    #qrImage {
+      display: block;
+      margin: 20px auto;
+      width: 300px;
+      height: 300px;
+      object-fit: contain;
+      border: 2px solid #fff;
+      border-radius: 8px;
     }
-    .qrcode img {
-      width: 180px;
-      height: 180px;
+
+    .history {
+      margin-top: 30px;
     }
+
     .history-item {
-      background: #f8f9fa;
-      margin-bottom: 10px;
+      background: rgba(0,0,0,0.2);
       padding: 10px;
-      border-radius: 6px;
-      border-left: 5px solid #007bff;
+      border-radius: 8px;
+      margin-bottom: 10px;
     }
+
     .status {
       font-weight: bold;
     }
@@ -80,100 +105,140 @@
 </head>
 <body>
 
-  <h2>Deposit Request</h2>
+  <div class="container">
+    <h2>💰 Deposit Coins</h2>
 
-  <div class="form-box">
-    <select id="qrSelect">
-      <option value="">-- Select QR Code --</option>
-      <option value="paytm">Paytm</option>
-      <option value="phonepe">PhonePe</option>
-      <option value="gpay">GPay</option>
+    <img id="qrImage" src="" alt="Scan QR to Pay" />
+
+    <label>Amount</label>
+    <select id="amount">
+      <option value="100">₹100</option>
+      <option value="200">₹200</option>
+      <option value="300">₹300</option>
+      <option value="500">₹500</option>
+      <option value="1000">₹1000</option>
     </select>
-    <div class="qrcode" id="qrImage" style="display:none;">
-      <img id="qrImg" src="" alt="QR Code">
-    </div>
 
-    <input type="number" id="amount" placeholder="Enter Amount ₹" />
+    <label>Transaction ID</label>
     <input type="text" id="txnId" placeholder="Enter Transaction ID" />
-    <input type="text" id="utr" placeholder="Enter UTR/Ref ID" />
-    <button onclick="submitDeposit()">Submit Deposit</button>
-  </div>
 
-  <div class="history">
-    <h3>Your Deposit History</h3>
-    <div id="depositHistory">Loading...</div>
+    <label>UTR Number</label>
+    <input type="text" id="utr" placeholder="Enter UTR Number" />
+
+    <button id="submitBtn" onclick="submitDeposit()">Submit</button>
+
+    <div class="history">
+      <h3>🧾 Deposit History</h3>
+      <div id="depositHistory"></div>
+    </div>
   </div>
 
   <script>
-    // 🔁 Sync session from localStorage if needed
+    // Sync sessionStorage if needed
     if (!sessionStorage.getItem("mobile") && localStorage.getItem("loggedInUser")) {
       sessionStorage.setItem("mobile", localStorage.getItem("loggedInUser"));
     }
 
     const mobile = sessionStorage.getItem("mobile");
+
     if (!mobile) {
-      alert("Please login first");
+      alert("❌ Please login first.");
       window.location.href = "login.html";
     }
 
-    // 🖼 Show QR image
-    document.getElementById("qrSelect").addEventListener("change", function () {
-      const qrValue = this.value;
-      const qrDiv = document.getElementById("qrImage");
-      const qrImg = document.getElementById("qrImg");
+    const qrList = [
+      { src: "images/qr1.png", weight: 0.2 },
+      { src: "images/qr2.png", weight: 0.2 },
+      { src: "images/qr3.png", weight: 0.6 }
+    ];
 
-      if (qrValue === "") {
-        qrDiv.style.display = "none";
-      } else {
-        qrDiv.style.display = "block";
-        qrImg.src = `images/${qrValue}.png`; // Image path should be correct
+    function pickRandomQR() {
+      const rand = Math.random();
+      let total = 0;
+      for (const qr of qrList) {
+        total += qr.weight;
+        if (rand <= total) return qr.src;
       }
-    });
+      return qrList[0].src;
+    }
 
-    // 🚀 Submit deposit
+    let currentQR = pickRandomQR();
+    let qrName = currentQR.split('/').pop().replace('.png', '');
+    document.getElementById("qrImage").src = currentQR;
+
     function submitDeposit() {
-      const amount = document.getElementById("amount").value.trim();
+      const amount = parseInt(document.getElementById("amount").value);
       const txnId = document.getElementById("txnId").value.trim();
       const utr = document.getElementById("utr").value.trim();
-      const qr = document.getElementById("qrSelect").value;
 
-      if (!amount || !txnId || !utr || !qr) {
-        alert("Please fill all fields and select a QR code.");
+      if (!txnId || !utr) {
+        alert("Please enter both Transaction ID and UTR Number.");
         return;
       }
 
-      const depositData = {
-        amount,
-        txnId,
-        utr,
-        qr,
-        status: "Pending",
-        time: new Date().toLocaleString()
-      };
+      const userRef = db.ref("users/" + mobile);
+      userRef.once("value").then((snap) => {
+        if (!snap.exists()) {
+          alert("User not found!");
+          return;
+        }
 
-      db.ref("user_deposits/" + mobile).push(depositData)
-        .then(() => {
-          alert("✅ Deposit request submitted!");
-          document.getElementById("amount").value = "";
+        const userData = snap.val();
+
+        db.ref("deposit_requests").once("value").then((allSnap) => {
+          let duplicate = false;
+          allSnap.forEach(child => {
+            if (child.val().utr === utr) {
+              duplicate = true;
+            }
+          });
+
+          if (duplicate) {
+            alert("❌ This UTR number already exists.");
+            return;
+          }
+
+          const newDeposit = {
+            name: userData.name,
+            mobile: mobile,
+            amount,
+            txnId,
+            utr,
+            qr: qrName,
+            status: "Pending",
+            time: new Date().toLocaleString()
+          };
+
+          db.ref("deposit_requests").push().set(newDeposit);
+          db.ref("user_deposits/" + mobile).push().set(newDeposit);
+
+          document.getElementById("submitBtn").disabled = true;
+          document.getElementById("submitBtn").innerText = "Submitted ✅";
+
           document.getElementById("txnId").value = "";
           document.getElementById("utr").value = "";
-          document.getElementById("qrSelect").value = "";
-          document.getElementById("qrImage").style.display = "none";
-        })
-        .catch((error) => {
-          console.error("Deposit Error:", error);
-          alert("Error submitting deposit.");
+
+          // pick new QR for next time
+          currentQR = pickRandomQR();
+          qrName = currentQR.split('/').pop().replace('.png', '');
+          document.getElementById("qrImage").src = currentQR;
+
+          showHistory(); // ✅ show updated
         });
+
+      });
     }
 
-    // 📜 Show history (live)
     function showHistory() {
       const historyDiv = document.getElementById("depositHistory");
-
-      db.ref("user_deposits/" + mobile).on("value", (snap) => {
+      db.ref("user_deposits/" + mobile).once("value").then((snap) => {
         historyDiv.innerHTML = "";
         const items = [];
-        snap.forEach(child => items.unshift(child.val())); // Reverse order (latest first)
+        snap.forEach(child => items.unshift(child.val()));
+        if (items.length === 0) {
+          historyDiv.innerHTML = "<p>No deposit history found.</p>";
+          return;
+        }
         items.forEach(dep => {
           historyDiv.innerHTML += `
             <div class="history-item">
@@ -186,9 +251,6 @@
             </div>
           `;
         });
-        if (items.length === 0) {
-          historyDiv.innerHTML = "No deposits yet.";
-        }
       });
     }
 
