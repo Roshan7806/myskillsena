@@ -134,7 +134,7 @@
   </div>
 
   <script>
-    const mobile = sessionStorage.getItem("mobile");
+    const mobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
     if (!mobile) {
       alert("❌ Please login first.");
       window.location.href = "login.html";
@@ -203,33 +203,30 @@
             time: new Date().toLocaleString()
           };
 
-          const newRef = db.ref("deposit_requests").push();
-          newRef.set(newDeposit);
+          // Save to global and user-specific deposit history
+          db.ref("deposit_requests").push().set(newDeposit);
+          db.ref("user_deposits/" + mobile).push().set(newDeposit);
 
-          const userDepositRef = db.ref("user_deposits/" + mobile).push();
-          userDepositRef.set(newDeposit);
-
+          document.getElementById("submitBtn").disabled = true;
           document.getElementById("submitBtn").innerText = "Submitted ✅";
-
-          setTimeout(() => {
-            document.getElementById("submitBtn").disabled = false;
-            document.getElementById("submitBtn").innerText = "Submit";
-            document.getElementById("txnId").value = "";
-            document.getElementById("utr").value = "";
-          }, 2000);
-
-          showHistory();
         });
-
       });
     }
 
     function showHistory() {
       const historyDiv = document.getElementById("depositHistory");
-      db.ref("user_deposits/" + mobile).once("value").then((snap) => {
+      const ref = db.ref("user_deposits/" + mobile);
+
+      ref.on("value", (snap) => {
         historyDiv.innerHTML = "";
+        if (!snap.exists()) {
+          historyDiv.innerHTML = "<p>No deposit history found.</p>";
+          return;
+        }
+
         const items = [];
         snap.forEach(child => items.unshift(child.val()));
+
         items.forEach(dep => {
           historyDiv.innerHTML += `
             <div class="history-item">
@@ -245,7 +242,6 @@
       });
     }
 
-    // Reload history when page loads
     window.onload = showHistory;
   </script>
 
