@@ -134,13 +134,7 @@
   </div>
 
   <script>
-    // Sync sessionStorage if needed
-    if (!sessionStorage.getItem("mobile") && localStorage.getItem("loggedInUser")) {
-      sessionStorage.setItem("mobile", localStorage.getItem("loggedInUser"));
-    }
-
     const mobile = sessionStorage.getItem("mobile");
-
     if (!mobile) {
       alert("❌ Please login first.");
       window.location.href = "login.html";
@@ -162,9 +156,9 @@
       return qrList[0].src;
     }
 
-    let currentQR = pickRandomQR();
-    let qrName = currentQR.split('/').pop().replace('.png', '');
-    document.getElementById("qrImage").src = currentQR;
+    const qrImageSrc = pickRandomQR();
+    const qrName = qrImageSrc.split('/').pop().replace('.png', '');
+    document.getElementById("qrImage").src = qrImageSrc;
 
     function submitDeposit() {
       const amount = parseInt(document.getElementById("amount").value);
@@ -209,21 +203,22 @@
             time: new Date().toLocaleString()
           };
 
-          db.ref("deposit_requests").push().set(newDeposit);
-          db.ref("user_deposits/" + mobile).push().set(newDeposit);
+          const newRef = db.ref("deposit_requests").push();
+          newRef.set(newDeposit);
 
-          document.getElementById("submitBtn").disabled = true;
+          const userDepositRef = db.ref("user_deposits/" + mobile).push();
+          userDepositRef.set(newDeposit);
+
           document.getElementById("submitBtn").innerText = "Submitted ✅";
 
-          document.getElementById("txnId").value = "";
-          document.getElementById("utr").value = "";
+          setTimeout(() => {
+            document.getElementById("submitBtn").disabled = false;
+            document.getElementById("submitBtn").innerText = "Submit";
+            document.getElementById("txnId").value = "";
+            document.getElementById("utr").value = "";
+          }, 2000);
 
-          // pick new QR for next time
-          currentQR = pickRandomQR();
-          qrName = currentQR.split('/').pop().replace('.png', '');
-          document.getElementById("qrImage").src = currentQR;
-
-          showHistory(); // ✅ show updated
+          showHistory();
         });
 
       });
@@ -235,10 +230,6 @@
         historyDiv.innerHTML = "";
         const items = [];
         snap.forEach(child => items.unshift(child.val()));
-        if (items.length === 0) {
-          historyDiv.innerHTML = "<p>No deposit history found.</p>";
-          return;
-        }
         items.forEach(dep => {
           historyDiv.innerHTML += `
             <div class="history-item">
@@ -254,7 +245,8 @@
       });
     }
 
-    showHistory();
+    // Reload history when page loads
+    window.onload = showHistory;
   </script>
 
 </body>
