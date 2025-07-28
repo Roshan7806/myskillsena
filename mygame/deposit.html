@@ -134,7 +134,12 @@
   </div>
 
   <script>
-    const mobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
+    // Session fix: sync from localStorage if needed
+    if (!sessionStorage.getItem("mobile") && localStorage.getItem("loggedInUser")) {
+      sessionStorage.setItem("mobile", localStorage.getItem("loggedInUser"));
+    }
+
+    const mobile = sessionStorage.getItem("mobile");
     if (!mobile) {
       alert("❌ Please login first.");
       window.location.href = "login.html";
@@ -203,12 +208,13 @@
             time: new Date().toLocaleString()
           };
 
-          // Save to global and user-specific deposit history
-          db.ref("deposit_requests").push().set(newDeposit);
-          db.ref("user_deposits/" + mobile).push().set(newDeposit);
-
-          document.getElementById("submitBtn").disabled = true;
-          document.getElementById("submitBtn").innerText = "Submitted ✅";
+          db.ref("deposit_requests").push(newDeposit);
+          db.ref("user_deposits/" + mobile).push(newDeposit).then(() => {
+            document.getElementById("submitBtn").disabled = true;
+            document.getElementById("submitBtn").innerText = "Submitted ✅";
+            document.getElementById("txnId").value = "";
+            document.getElementById("utr").value = "";
+          });
         });
       });
     }
