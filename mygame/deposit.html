@@ -134,17 +134,13 @@
   </div>
 
   <script>
-    // Session fix: sync from localStorage if needed
-    if (!sessionStorage.getItem("mobile") && localStorage.getItem("loggedInUser")) {
-      sessionStorage.setItem("mobile", localStorage.getItem("loggedInUser"));
-    }
-
-    const mobile = sessionStorage.getItem("mobile");
+    const mobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
     if (!mobile) {
       alert("❌ Please login first.");
       window.location.href = "login.html";
     }
 
+    // Random QR logic
     const qrList = [
       { src: "images/qr1.png", weight: 0.2 },
       { src: "images/qr2.png", weight: 0.2 },
@@ -208,12 +204,12 @@
             time: new Date().toLocaleString()
           };
 
-          db.ref("deposit_requests").push(newDeposit);
-          db.ref("user_deposits/" + mobile).push(newDeposit).then(() => {
+          // Save globally and to user path
+          db.ref("deposit_requests").push().set(newDeposit);
+          db.ref("user_deposits/" + mobile).push().set(newDeposit).then(() => {
             document.getElementById("submitBtn").disabled = true;
             document.getElementById("submitBtn").innerText = "Submitted ✅";
-            document.getElementById("txnId").value = "";
-            document.getElementById("utr").value = "";
+            showHistory(); // Show updated history instantly
           });
         });
       });
@@ -223,7 +219,7 @@
       const historyDiv = document.getElementById("depositHistory");
       const ref = db.ref("user_deposits/" + mobile);
 
-      ref.on("value", (snap) => {
+      ref.once("value").then((snap) => {
         historyDiv.innerHTML = "";
         if (!snap.exists()) {
           historyDiv.innerHTML = "<p>No deposit history found.</p>";
