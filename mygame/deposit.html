@@ -12,7 +12,6 @@
       color: #fff;
       padding: 20px;
     }
-
     .container {
       max-width: 500px;
       margin: auto;
@@ -22,17 +21,14 @@
       backdrop-filter: blur(5px);
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-
     h2 {
       text-align: center;
       margin-bottom: 20px;
     }
-
     label {
       display: block;
       margin-top: 15px;
     }
-
     select, input {
       width: 100%;
       padding: 10px;
@@ -41,7 +37,6 @@
       border: none;
       margin-top: 5px;
     }
-
     button {
       width: 100%;
       padding: 14px;
@@ -54,12 +49,10 @@
       margin-top: 20px;
       cursor: pointer;
     }
-
     button:disabled {
       background: gray;
       cursor: not-allowed;
     }
-
     #qrImage {
       display: block;
       margin: 20px auto;
@@ -69,18 +62,15 @@
       border: 2px solid #fff;
       border-radius: 8px;
     }
-
     .history {
       margin-top: 30px;
     }
-
     .history-item {
       background: rgba(0,0,0,0.2);
       padding: 10px;
       border-radius: 8px;
       margin-bottom: 10px;
     }
-
     .status {
       font-weight: bold;
     }
@@ -107,7 +97,6 @@
 
   <div class="container">
     <h2>💰 Deposit Coins</h2>
-
     <img id="qrImage" src="" alt="Scan QR to Pay" />
 
     <label>Amount</label>
@@ -140,7 +129,7 @@
       window.location.href = "login.html";
     }
 
-    // Random QR logic
+    // Random QR
     const qrList = [
       { src: "images/qr1.png", weight: 0.2 },
       { src: "images/qr2.png", weight: 0.2 },
@@ -204,12 +193,10 @@
             time: new Date().toLocaleString()
           };
 
-          // Save globally and to user path
-          db.ref("deposit_requests").push().set(newDeposit);
-          db.ref("user_deposits/" + mobile).push().set(newDeposit).then(() => {
+          db.ref("deposit_requests").push(newDeposit);
+          db.ref("user_deposits/" + mobile).push(newDeposit).then(() => {
             document.getElementById("submitBtn").disabled = true;
             document.getElementById("submitBtn").innerText = "Submitted ✅";
-            showHistory(); // Show updated history instantly
           });
         });
       });
@@ -219,7 +206,7 @@
       const historyDiv = document.getElementById("depositHistory");
       const ref = db.ref("user_deposits/" + mobile);
 
-      ref.once("value").then((snap) => {
+      ref.on("value", (snap) => {
         historyDiv.innerHTML = "";
         if (!snap.exists()) {
           historyDiv.innerHTML = "<p>No deposit history found.</p>";
