@@ -193,10 +193,17 @@
             time: new Date().toLocaleString()
           };
 
-          db.ref("deposit_requests").push(newDeposit);
-          db.ref("user_deposits/" + mobile).push(newDeposit).then(() => {
+          const push1 = db.ref("deposit_requests").push(newDeposit);
+          const push2 = db.ref("user_deposits/" + mobile).push(newDeposit);
+
+          Promise.all([push1, push2]).then(() => {
             document.getElementById("submitBtn").disabled = true;
             document.getElementById("submitBtn").innerText = "Submitted ✅";
+            alert("✅ Deposit request submitted!");
+            showHistory(); // Refresh history
+          }).catch((err) => {
+            console.error("Error:", err);
+            alert("❌ Something went wrong. Try again.");
           });
         });
       });
@@ -214,7 +221,7 @@
         }
 
         const items = [];
-        snap.forEach(child => items.unshift(child.val()));
+        snap.forEach(child => items.unshift(child.val())); // Newest first
 
         items.forEach(dep => {
           historyDiv.innerHTML += `
