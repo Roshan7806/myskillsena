@@ -42,23 +42,22 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
-
+  <!-- Firebase (v8) Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+  </script>
 </head>
 <body>
 
@@ -67,92 +66,69 @@
 
   <script>
     function showDeposits() {
-      const allDeposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests")) || [];
       const container = document.getElementById("requests");
       container.innerHTML = "";
 
-      allDeposits.forEach((dep, index) => {
-        container.innerHTML += `
-          <div class="request">
-            <div><strong>Name:</strong> ${dep.name}</div>
-            <div><strong>Mobile:</strong> ${dep.mobile}</div>
-            <div><strong>Amount:</strong> ₹${dep.amount}</div>
-            <div><strong>Txn ID:</strong> ${dep.txnId}</div>
-            <div><strong>UTR:</strong> ${dep.utr}</div>
-            <div><strong>QR Used:</strong> ${dep.qr}</div>
-            <div><strong>Time:</strong> ${dep.time}</div>
-            <div class="status">Status: ${dep.status}</div>
-            ${dep.status === "Pending" ? `
-              <button class="btn approve" onclick="approveDeposit(${index})">Approve</button>
-              <button class="btn reject" onclick="rejectDeposit(${index})">Reject</button>
-            ` : ""}
-          </div>
-        `;
+      firebase.database().ref("deposit_requests").on("value", (snapshot) => {
+        const data = snapshot.val();
+        container.innerHTML = ""; // Clear old list
+        if (!data) {
+          container.innerHTML = "<p>No deposit requests found.</p>";
+          return;
+        }
+
+        const entries = Object.entries(data);
+        entries.reverse().forEach(([key, dep], index) => {
+          const html = `
+            <div class="request">
+              <div><strong>Name:</strong> ${dep.name || ""}</div>
+              <div><strong>Mobile:</strong> ${dep.mobile || ""}</div>
+              <div><strong>Amount:</strong> ₹${dep.amount || ""}</div>
+              <div><strong>Txn ID:</strong> ${dep.txnId || ""}</div>
+              <div><strong>UTR:</strong> ${dep.utr || ""}</div>
+              <div><strong>QR Used:</strong> ${dep.qr || ""}</div>
+              <div><strong>Time:</strong> ${dep.time || ""}</div>
+              <div class="status">Status: ${dep.status}</div>
+              ${dep.status === "Pending" ? `
+                <button class="btn approve" onclick="handleAction('${key}', '${dep.mobile}', '${dep.utr}', ${dep.amount}, 'Approved')">Approve</button>
+                <button class="btn reject" onclick="handleAction('${key}', '${dep.mobile}', '${dep.utr}', ${dep.amount}, 'Rejected')">Reject</button>
+              ` : ""}
+            </div>
+          `;
+          container.innerHTML += html;
+        });
       });
     }
 
-    function approveDeposit(index) {
-      const deposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests")) || [];
-      const deposit = deposits[index];
+    function handleAction(key, mobile, utr, amount, action) {
+      const depositRef = db.ref("deposit_requests/" + key);
+      depositRef.update({ status: action });
 
-      if (deposit.status !== "Pending") {
-        alert("This request is already " + deposit.status);
-        return;
+      // Also update user's own deposit history
+      const userDepRef = db.ref("user_deposits/" + mobile);
+      userDepRef.once("value", (snapshot) => {
+        const history = snapshot.val();
+        if (history) {
+          const updates = {};
+          Object.keys(history).forEach((k) => {
+            if (history[k].utr === utr) {
+              updates[k + "/status"] = action;
+            }
+          });
+          userDepRef.update(updates);
+        }
+      });
+
+      if (action === "Approved") {
+        const userRef = db.ref("users/" + mobile);
+        userRef.once("value").then((snap) => {
+          const userData = snap.val() || {};
+          const currentBalance = Number(userData.balance || 0);
+          userRef.update({ balance: currentBalance + Number(amount) });
+        });
       }
 
-      // ✅ Step 1: Update status to "Approved"
-      deposit.status = "Approved";
-      deposits[index] = deposit;
-      // localStorage removed - replaced by FirebasesetItem("deposit_requests", JSON.stringify(deposits));
-
-      // ✅ Step 2: Add coins to user account
-      const userKey = "user_" + deposit.mobile;
-      const userData = JSON.parse(// localStorage removed - replaced by FirebasegetItem(userKey)) || {};
-
-      // Ensure 'coins' exists
-      userData.coins = (userData.coins || 0) + Number(deposit.amount);
-      // localStorage removed - replaced by FirebasesetItem(userKey, JSON.stringify(userData));
-
-      // ✅ Step 3: Update user-specific deposit history
-      const userDepKey = "deposit_requests_" + deposit.mobile;
-      const userDepositHistory = JSON.parse(// localStorage removed - replaced by FirebasegetItem(userDepKey)) || [];
-      const matchIndex = userDepositHistory.findIndex(d => d.utr === deposit.utr);
-
-      if (matchIndex !== -1) {
-        userDepositHistory[matchIndex].status = "Approved";
-        // localStorage removed - replaced by FirebasesetItem(userDepKey, JSON.stringify(userDepositHistory));
-      }
-
-      alert("✅ Approved! Coins added to user account.");
-      showDeposits();
-    }
-
-    function rejectDeposit(index) {
-      const deposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests")) || [];
-      const deposit = deposits[index];
-
-      if (deposit.status !== "Pending") {
-        alert("This request is already " + deposit.status);
-        return;
-      }
-
-      // ✅ Step 1: Update status to "Rejected"
-      deposit.status = "Rejected";
-      deposits[index] = deposit;
-      // localStorage removed - replaced by FirebasesetItem("deposit_requests", JSON.stringify(deposits));
-
-      // ✅ Step 2: Update user-specific deposit history
-      const userDepKey = "deposit_requests_" + deposit.mobile;
-      const userDepositHistory = JSON.parse(// localStorage removed - replaced by FirebasegetItem(userDepKey)) || [];
-      const matchIndex = userDepositHistory.findIndex(d => d.utr === deposit.utr);
-
-      if (matchIndex !== -1) {
-        userDepositHistory[matchIndex].status = "Rejected";
-        // localStorage removed - replaced by FirebasesetItem(userDepKey, JSON.stringify(userDepositHistory));
-      }
-
-      alert("❌ Rejected.");
-      showDeposits();
+      alert(action === "Approved" ? "✅ Approved & coins added!" : "❌ Rejected.");
     }
 
     showDeposits();
