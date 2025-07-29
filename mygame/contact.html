@@ -13,9 +13,10 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
     }
     .contact-box {
-      background: rgba(0,0,0,0.4);
+      background: rgba(0, 0, 0, 0.4);
       padding: 30px;
       border-radius: 15px;
       width: 90%;
@@ -43,23 +44,22 @@
     }
   </style>
 
-  <!-- Firebase Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <!-- ✅ Firebase v8 Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script>
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
       databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
       projectId: "apnaskillsena",
-      storageBucket: "apnaskillsena.firebasestorage.app",
+      storageBucket: "apnaskillsena.appspot.com",
       messagingSenderId: "149529300642",
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
+    // ✅ Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
   </script>
 </head>
@@ -79,21 +79,21 @@
       const message = document.getElementById('message').value.trim();
 
       if (!name || !mobile || !message) {
-        alert("Please fill all fields.");
+        alert("❗ Please fill all fields.");
         return;
       }
 
-      const now = new Date().toLocaleString();
+      const timestamp = new Date().toISOString();
 
       const newMessageRef = database.ref("contact_messages").push();
       newMessageRef.set({
         name: name,
         mobile: mobile,
         message: message,
-        time: now
+        time: timestamp
       }, function(error) {
         if (error) {
-          alert("❌ Error sending message. Please try again.");
+          alert("❌ Failed to send message. Try again.");
         } else {
           alert("✅ Message sent successfully!");
           document.getElementById('name').value = '';
