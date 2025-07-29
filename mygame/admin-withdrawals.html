@@ -1,4 +1,3 @@
-<!-- ✅ This version is FINAL with pendingWithdrawal count update -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,23 +47,23 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
+  <!-- Firebase Scripts (v8 for compatibility with initializeApp) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
 
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
 </head>
 <body>
 
@@ -74,31 +73,26 @@
 <script>
   const container = document.getElementById("withdrawals");
 
-  function getAllUsers() {
-    const users = [];
-    for (let key in localStorage) {
-      if (key.startsWith("user_")) {
-        const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key));
-        users.push(user);
-      }
-    }
-    return users;
-  }
-
   function loadWithdrawals() {
-    const users = getAllUsers();
-    let found = false;
-    container.innerHTML = "";
+    const ref = firebase.database().ref("withdrawal_requests");
 
-    users.forEach(user => {
-      const key = "withdrawals_" + user.mobile;
-      const requests = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key)) || [];
+    ref.once("value", (snapshot) => {
+      container.innerHTML = "";
+      let found = false;
 
-      requests.forEach((req, index) => {
+      const data = snapshot.val();
+      if (!data) {
+        container.innerHTML = "<p style='text-align:center;color:gray;'>No withdrawal requests found.</p>";
+        return;
+      }
+
+      Object.keys(data).forEach(requestId => {
+        const req = data[requestId];
+
         const box = document.createElement("div");
         box.className = "box";
         box.innerHTML = `
-          <p>📱 Mobile: <b>${user.mobile}</b></p>
+          <p>📱 Mobile: <b>${req.mobile}</b></p>
           <p>💰 Amount: ₹${req.amount}</p>
           <p>UPI: ${req.upi}</p>
           <p>Status: <b>${req.status}</b></p>
@@ -115,10 +109,7 @@
           approve.textContent = "Approve ✅";
           approve.className = "approve";
           approve.onclick = () => {
-            req.status = "Approved";
-            requests[index] = req;
-            // localStorage removed - replaced by FirebasesetItem(key, JSON.stringify(requests));
-            updatePendingWithdrawalCount(); // ✅ Update count
+            firebase.database().ref("withdrawal_requests/" + requestId + "/status").set("Approved");
             alert("Approved successfully");
             loadWithdrawals();
           };
@@ -127,14 +118,12 @@
           reject.textContent = "Reject ❌";
           reject.className = "reject";
           reject.onclick = () => {
-            if (!input.value.trim()) {
+            const reason = input.value.trim();
+            if (!reason) {
               alert("Enter reason");
               return;
             }
-            req.status = "Rejected - " + input.value.trim();
-            requests[index] = req;
-            // localStorage removed - replaced by FirebasesetItem(key, JSON.stringify(requests));
-            updatePendingWithdrawalCount(); // ✅ Update count
+            firebase.database().ref("withdrawal_requests/" + requestId + "/status").set("Rejected - " + reason);
             alert("Rejected successfully");
             loadWithdrawals();
           };
@@ -150,23 +139,11 @@
 
         container.appendChild(box);
       });
-    });
 
-    if (!found) {
-      container.innerHTML = "<p style='text-align:center;color:gray;'>No pending withdrawal requests.</p>";
-    }
-  }
-
-  function updatePendingWithdrawalCount() {
-    const withdrawals = [];
-    for (let key in localStorage) {
-      if (key.startsWith("withdrawals_")) {
-        const list = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key) || "[]");
-        withdrawals.push(...list);
+      if (!found) {
+        container.innerHTML = "<p style='text-align:center;color:gray;'>No pending withdrawal requests.</p>";
       }
-    }
-    const pending = withdrawals.filter(r => r.status === "Pending").length;
-    // localStorage removed - replaced by FirebasesetItem("pending_withdrawal_count", pending);
+    });
   }
 
   loadWithdrawals();
