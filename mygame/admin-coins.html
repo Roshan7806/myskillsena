@@ -5,14 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin - Add/Remove Coins</title>
   <style>
-    /* (Same styles as before...) */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0 20px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      width: 48%;
+      margin-right: 2%;
+    }
+    button.remove {
+      background-color: #dc3545;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .info-box {
+      background: #f0f8ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #cce5ff;
+    }
+    .log-entry {
+      background: #f9f9f9;
+      border-left: 5px solid #007bff;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .log-entry.red {
+      border-color: #dc3545;
+    }
   </style>
 
-  <!-- Firebase v8 Scripts -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
-    var firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
       databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
@@ -22,7 +82,7 @@
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
     firebase.initializeApp(firebaseConfig);
-    var database = firebase.database();
+    const db = firebase.database();
   </script>
 </head>
 <body>
@@ -46,31 +106,29 @@
     </div>
 
     <hr>
+
     <h3>📜 Action Logs</h3>
     <div id="logBox"></div>
   </div>
 
   <script>
-    let currentUser = null;
+    let currentUserMobile = "";
+    let currentUserData = {};
 
     function searchUser() {
       const mobile = document.getElementById("searchMobile").value.trim();
-      if (!mobile) {
-        alert("Please enter mobile number.");
-        return;
-      }
+      if (!mobile) return alert("Enter mobile number.");
 
-      firebase.database().ref("users/" + mobile).once("value", function(snapshot) {
-        if (!snapshot.exists()) {
-          alert("User not found!");
-          return;
-        }
+      db.ref("users").orderByChild("mobile").equalTo(mobile).once("value", snapshot => {
+        if (!snapshot.exists()) return alert("User not found!");
 
-        const user = snapshot.val();
-        currentUser = mobile;
-        document.getElementById("userName").textContent = user.name || "N/A";
-        document.getElementById("userBalance").textContent = user.balance || 0;
-        document.getElementById("userInfo").style.display = "block";
+        snapshot.forEach(child => {
+          currentUserMobile = mobile;
+          currentUserData = child.val();
+          document.getElementById("userName").textContent = currentUserData.name || "";
+          document.getElementById("userBalance").textContent = currentUserData.balance || 0;
+          document.getElementById("userInfo").style.display = "block";
+        });
       });
     }
 
@@ -84,65 +142,55 @@
 
     function modifyCoins(type) {
       const amt = parseInt(document.getElementById("coinAmount").value);
-      if (!currentUser || isNaN(amt) || amt <= 0) {
-        alert("Enter valid amount.");
-        return;
-      }
+      if (!currentUserMobile || isNaN(amt) || amt <= 0) return alert("Enter valid amount.");
 
-      const userRef = firebase.database().ref("users/" + currentUser);
-      userRef.once("value", function(snapshot) {
-        if (!snapshot.exists()) {
-          alert("User not found!");
-          return;
-        }
+      const userRef = db.ref("users").orderByChild("mobile").equalTo(currentUserMobile);
+      userRef.once("value", snapshot => {
+        snapshot.forEach(child => {
+          const userKey = child.key;
+          const userData = child.val();
+          let newBalance = userData.balance || 0;
 
-        let user = snapshot.val();
-        let newBalance = user.balance || 0;
-
-        if (type === "add") {
-          newBalance += amt;
-          saveLog("Added ₹" + amt + " to " + currentUser, false);
-        } else {
-          if (newBalance < amt) {
-            alert("Not enough coins!");
-            return;
+          if (type === "add") {
+            newBalance += amt;
+            saveLog(`Added ₹${amt} to ${currentUserMobile}`, false);
+          } else {
+            if (newBalance < amt) return alert("Not enough coins!");
+            newBalance -= amt;
+            saveLog(`Removed ₹${amt} from ${currentUserMobile}`, true);
           }
-          newBalance -= amt;
-          saveLog("Removed ₹" + amt + " from " + currentUser, true);
-        }
 
-        userRef.update({ balance: newBalance });
-        document.getElementById("userBalance").textContent = newBalance;
-        document.getElementById("coinAmount").value = "";
+          db.ref("users/" + userKey).update({ balance: newBalance });
+          document.getElementById("userBalance").textContent = newBalance;
+          document.getElementById("coinAmount").value = "";
+        });
       });
     }
 
     function saveLog(message, isRemove) {
-      const logData = {
+      const log = {
         msg: message,
         time: new Date().toLocaleString(),
         remove: isRemove
       };
-      const newLogRef = firebase.database().ref("admin_logs").push();
-      newLogRef.set(logData);
+      db.ref("admin_logs").push(log);
     }
 
     function showLogs() {
-      const logBox = document.getElementById("logBox");
-      firebase.database().ref("admin_logs").limitToLast(20).on("value", function(snapshot) {
+      db.ref("admin_logs").limitToLast(20).on("value", snapshot => {
+        const logBox = document.getElementById("logBox");
         logBox.innerHTML = "";
-        snapshot.forEach(function(child) {
+        snapshot.forEach(child => {
           const log = child.val();
           const div = document.createElement("div");
           div.className = "log-entry" + (log.remove ? " red" : "");
           div.innerHTML = `<strong>${log.time}:</strong> ${log.msg}`;
-          logBox.prepend(div);
+          logBox.appendChild(div);
         });
       });
     }
 
     showLogs();
   </script>
-
 </body>
 </html>
