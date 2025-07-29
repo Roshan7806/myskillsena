@@ -43,23 +43,25 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.firebasestorage.app",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
 
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
 </head>
 <body>
   <div class="contact-box">
@@ -81,19 +83,24 @@
         return;
       }
 
-      const contactMessages = JSON.parse(// localStorage removed - replaced by FirebasegetItem("contact_messages")) || [];
-      contactMessages.push({
-        name,
-        mobile,
-        message,
-        time: new Date().toLocaleString()
-      });
+      const now = new Date().toLocaleString();
 
-      // localStorage removed - replaced by FirebasesetItem("contact_messages", JSON.stringify(contactMessages));
-      alert("✅ Message sent successfully!");
-      document.getElementById('name').value = '';
-      document.getElementById('mobile').value = '';
-      document.getElementById('message').value = '';
+      const newMessageRef = database.ref("contact_messages").push();
+      newMessageRef.set({
+        name: name,
+        mobile: mobile,
+        message: message,
+        time: now
+      }, function(error) {
+        if (error) {
+          alert("❌ Error sending message. Please try again.");
+        } else {
+          alert("✅ Message sent successfully!");
+          document.getElementById('name').value = '';
+          document.getElementById('mobile').value = '';
+          document.getElementById('message').value = '';
+        }
+      });
     }
   </script>
 </body>
