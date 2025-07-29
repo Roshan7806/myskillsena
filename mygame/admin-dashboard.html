@@ -58,23 +58,22 @@
     ul li { margin: 10px 0; font-size: 16px; }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
-
+  <!-- Firebase v8 Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+  </script>
 </head>
 <body>
 
@@ -114,47 +113,50 @@
 
   <script>
     function updateAdminDashboard() {
-      // ✅ Users & Coins
-      let userCount = 0;
-      let totalCoins = 0;
-      for (let key in localStorage) {
-        if (key.startsWith("user_")) {
-          const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key));
-          userCount++;
-          totalCoins += Number(user.coins || 0);
-        }
-      }
-      document.getElementById("userCount").innerText = userCount;
-      document.getElementById("totalCoins").innerText = totalCoins;
-
-      // ✅ Pending Deposits
-      const deposits = JSON.parse(// localStorage removed - replaced by FirebasegetItem("deposit_requests") || "[]");
-      const pendingDeposits = deposits.filter(req => req.status === "Pending").length;
-      document.getElementById("pendingDeposits").innerText = pendingDeposits;
-
-      // ✅ Pending Withdrawals
-      let pendingWithdrawals = 0;
-      for (let key in localStorage) {
-        if (key.startsWith("withdrawals_")) {
-          const list = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key) || "[]");
-          pendingWithdrawals += list.filter(r => r.status === "Pending").length;
-        }
-      }
-      document.getElementById("pendingWithdrawals").innerText = pendingWithdrawals;
-
-      // ✅ Profit / Loss Summary
-      const results = JSON.parse(// localStorage removed - replaced by FirebasegetItem("game_results") || "[]");
-      let totalBet = 0;
-      let totalReturn = 0;
-      results.forEach(result => {
-        totalBet += Number(result.bet || 0);
-        totalReturn += Number(result.won || 0);
+      // Total Users & Coins
+      db.ref("users").once("value", (snapshot) => {
+        let count = 0;
+        let totalCoins = 0;
+        snapshot.forEach((child) => {
+          count++;
+          totalCoins += Number(child.val().coins || 0);
+        });
+        document.getElementById("userCount").innerText = count;
+        document.getElementById("totalCoins").innerText = totalCoins;
       });
 
-      const profit = totalBet - totalReturn;
-      const revenueElem = document.getElementById("revenueLoss");
-      revenueElem.innerText = profit;
-      revenueElem.style.color = profit >= 0 ? "green" : "red";
+      // Pending Deposits
+      db.ref("deposit_requests").once("value", (snapshot) => {
+        let pending = 0;
+        snapshot.forEach((child) => {
+          if (child.val().status === "Pending") pending++;
+        });
+        document.getElementById("pendingDeposits").innerText = pending;
+      });
+
+      // Pending Withdrawals
+      db.ref("withdrawal_requests").once("value", (snapshot) => {
+        let pending = 0;
+        snapshot.forEach((child) => {
+          if (child.val().status === "Pending") pending++;
+        });
+        document.getElementById("pendingWithdrawals").innerText = pending;
+      });
+
+      // Revenue / Loss
+      db.ref("game_results").once("value", (snapshot) => {
+        let totalBet = 0;
+        let totalWin = 0;
+        snapshot.forEach((child) => {
+          const data = child.val();
+          totalBet += Number(data.bet || 0);
+          totalWin += Number(data.won || 0);
+        });
+        const profit = totalBet - totalWin;
+        const rev = document.getElementById("revenueLoss");
+        rev.innerText = profit;
+        rev.style.color = profit >= 0 ? "green" : "red";
+      });
     }
 
     updateAdminDashboard();
