@@ -28,7 +28,7 @@
       margin-bottom: 20px;
     }
 
-    label, input, select {
+    label, input {
       display: block;
       width: 100%;
       margin-bottom: 10px;
@@ -82,23 +82,21 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
-
+  <!-- ✅ Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
 </head>
 <body>
   <div class="container">
@@ -106,7 +104,6 @@
 
     <label>Search by Mobile Number</label>
     <input type="text" id="mobileSearch" placeholder="Enter mobile number">
-
     <button onclick="loadResults()">Search</button>
 
     <div class="result-box" id="resultBox"></div>
@@ -115,41 +112,44 @@
   <script>
     function loadResults() {
       const mobile = document.getElementById("mobileSearch").value.trim();
+      const resultBox = document.getElementById("resultBox");
+      resultBox.innerHTML = "";
+
       if (!mobile) {
         alert("Please enter a mobile number.");
         return;
       }
 
-      const resultKey = "game_results_" + mobile;
-      const data = JSON.parse(// localStorage removed - replaced by FirebasegetItem(resultKey)) || [];
+      const resultsRef = firebase.database().ref("game_results/" + mobile);
+      resultsRef.once("value", function(snapshot) {
+        const data = snapshot.val();
+        if (!data) {
+          resultBox.innerHTML = "<p>No game results found for this user.</p>";
+          return;
+        }
 
-      const resultBox = document.getElementById("resultBox");
-      resultBox.innerHTML = "";
+        const resultList = Object.values(data).reverse();
 
-      if (data.length === 0) {
-        resultBox.innerHTML = "<p>No game results found for this user.</p>";
-        return;
-      }
+        resultList.forEach(result => {
+          const betAmount = result.coins || result.bet || 0;
+          const correct = result.correct || 0;
+          const status = result.status || (correct >= 4 ? "Win" : "Loss");
+          const wonOrLost = status === "Win" ? (result.amount || correct * (betAmount / 10)) : 0;
+          const time = result.time || "Time not recorded";
+          const game = result.game || "Unknown";
 
-      data.forEach(result => {
-        const betAmount = result.coins || result.bet || 0;
-        const correct = result.correct || 0;
-        const status = result.status || (correct >= 4 ? "Win" : "Loss");
-        const wonOrLost = status === "Win" ? (result.amount || correct * (betAmount / 10)) : 0;
-        const time = result.time || "Time not recorded";
-        const game = result.game || "Unknown";
-
-        const div = document.createElement("div");
-        div.className = "result-item " + (status === "Win" ? "win" : "loss");
-        div.innerHTML = `
-          <h4>🎯 Game: ${game}</h4>
-          <p>✅ Correct Answers: ${correct}</p>
-          <p>💰 Bet Amount: ₹${betAmount}</p>
-          <p>🏆 Coins ${status === "Win" ? "Won" : "Lost"}: ₹${status === "Win" ? wonOrLost : betAmount}</p>
-          <p class="status">📌 Status: ${status}</p>
-          <p>🕒 ${time}</p>
-        `;
-        resultBox.appendChild(div);
+          const div = document.createElement("div");
+          div.className = "result-item " + (status === "Win" ? "win" : "loss");
+          div.innerHTML = `
+            <h4>🎯 Game: ${game}</h4>
+            <p>✅ Correct Answers: ${correct}</p>
+            <p>💰 Bet Amount: ₹${betAmount}</p>
+            <p>🏆 Coins ${status === "Win" ? "Won" : "Lost"}: ₹${status === "Win" ? wonOrLost : betAmount}</p>
+            <p class="status">📌 Status: ${status}</p>
+            <p>🕒 ${time}</p>
+          `;
+          resultBox.appendChild(div);
+        });
       });
     }
   </script>
