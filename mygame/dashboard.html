@@ -143,11 +143,12 @@
     }
   </style>
 
-  <!-- ✅ Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  <!-- ✅ Firebase (v8 style) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+  <script>
+    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
@@ -157,17 +158,16 @@
       messagingSenderId: "149529300642",
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase();
-
+    // ✅ Login Check
     const mobile = localStorage.getItem("loggedInUser");
     if (!mobile) {
       alert("Please login first.");
       window.location.href = "login.html";
     } else {
-      const userRef = ref(db, "users/" + mobile);
-      get(userRef).then((snapshot) => {
+      firebase.database().ref("users/" + mobile).once("value", snapshot => {
         if (snapshot.exists()) {
           const user = snapshot.val();
           if (user.status === "blocked") {
@@ -193,8 +193,7 @@
       });
 
       // ✅ Broadcast Popup
-      const bcRef = ref(db, "broadcast");
-      get(bcRef).then((snap) => {
+      firebase.database().ref("broadcast").once("value", snap => {
         if (snap.exists()) {
           const bc = snap.val();
           if (bc.image && bc.image.startsWith("http")) {
@@ -206,21 +205,22 @@
       });
     }
 
-    window.logout = function () {
+    function logout() {
       localStorage.removeItem("loggedInUser");
       alert("Logged out.");
       window.location.href = "login.html";
-    };
+    }
 
-    window.closeBroadcast = function () {
+    function closeBroadcast() {
       document.getElementById("broadcastPopup").style.display = "none";
-    };
+    }
 
-    window.closeBonus = function () {
+    function closeBonus() {
       document.getElementById("bonusPopup").style.display = "none";
-    };
+    }
   </script>
 </head>
+
 <body>
   <div class="dashboard-box">
     <img src="skillsena.png" alt="Skillsena Logo" />
