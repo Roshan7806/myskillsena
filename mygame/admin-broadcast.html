@@ -58,6 +58,7 @@
   <!-- ✅ Firebase v8 Scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -97,25 +98,35 @@
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const imageData = e.target.result;
-        const data = {
-          message: msg,
-          image: imageData,
-          time: new Date().toLocaleString()
-        };
+      const storageRef = firebase.storage().ref("broadcast/" + Date.now() + "_" + file.name);
+      const uploadTask = storageRef.put(file);
 
-        firebase.database().ref("broadcast_data").set(data)
-          .then(() => {
-            alert("✅ Broadcast saved. Users will see it on login.");
-          })
-          .catch((error) => {
-            console.error("Error saving broadcast:", error);
-            alert("❌ Failed to save broadcast.");
+      uploadTask.on(
+        "state_changed",
+        null,
+        function (error) {
+          console.error("Image upload error:", error);
+          alert("❌ Failed to upload image.");
+        },
+        function () {
+          uploadTask.snapshot.ref.getDownloadURL().then(function (downloadURL) {
+            const data = {
+              message: msg,
+              image: downloadURL,
+              time: new Date().toLocaleString()
+            };
+
+            firebase.database().ref("broadcast_data").set(data)
+              .then(() => {
+                alert("✅ Broadcast saved. Users will see it on login.");
+              })
+              .catch((error) => {
+                console.error("Error saving broadcast:", error);
+                alert("❌ Failed to save broadcast.");
+              });
           });
-      };
-      reader.readAsDataURL(file);
+        }
+      );
     }
 
     function removeBroadcast() {
