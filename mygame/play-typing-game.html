@@ -77,26 +77,24 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
-
+  <!-- Firebase v8 Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+  </script>
 </head>
 <body oncopy="return false" onpaste="return false">
-
   <div class="top-bar">
     <div>👤 <span id="username">User</span></div>
     <div>💰 ₹<span id="balance">0</span></div>
@@ -112,23 +110,21 @@
   </div>
 
   <script>
-    const mobile = // localStorage removed - replaced by FirebasegetItem("loggedInUser");
+    // Sync sessionStorage with localStorage if needed
+    const mobile = localStorage.getItem("loggedInUser");
     if (!mobile) {
       alert("Please login first.");
       window.location.href = "login.html";
     }
+    sessionStorage.setItem("mobile", mobile);
 
-    let user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
-    if (!user) {
-      alert("User not found.");
-      window.location.href = "login.html";
-    }
-
-    let bet = parseInt(// localStorage removed - replaced by FirebasegetItem("typing_bet")) || 10;
-
-    // ✅ Coin deduction हटाया गया है — अब सिर्फ पहले page (typing-game.html) में coin कटेगा
-    document.getElementById("username").textContent = user.name;
-    document.getElementById("balance").textContent = user.balance;
+    let user = {};
+    let bet = parseInt(localStorage.getItem("typing_bet")) || 10;
+    let usedIndexes = [];
+    let currentPara = "";
+    let totalCorrectWords = 0;
+    let timer = 60;
+    let interval;
 
     const paragraphs = [
       "Typing fast is a useful skill for many people.",
@@ -143,11 +139,19 @@
       "Daily practice sharpens your brain and boosts speed."
     ];
 
-    let usedIndexes = JSON.parse(// localStorage removed - replaced by FirebasegetItem("used_paragraphs_" + mobile)) || [];
-    let currentPara = "";
-    let totalCorrectWords = 0;
-    let timer = 60;
-    let interval;
+    // Fetch user data from Firebase
+    db.ref("users/" + mobile).once("value").then(snapshot => {
+      if (!snapshot.exists()) {
+        alert("User not found.");
+        window.location.href = "login.html";
+        return;
+      }
+      user = snapshot.val();
+      document.getElementById("username").textContent = user.name || "User";
+      document.getElementById("balance").textContent = user.balance || 0;
+
+      startGame(); // Start only after user data loaded
+    });
 
     function getRandomParagraph() {
       if (usedIndexes.length === paragraphs.length) usedIndexes = [];
@@ -156,7 +160,6 @@
         index = Math.floor(Math.random() * paragraphs.length);
       } while (usedIndexes.includes(index));
       usedIndexes.push(index);
-      // localStorage removed - replaced by FirebasesetItem("used_paragraphs_" + mobile, JSON.stringify(usedIndexes));
       currentPara = paragraphs[index];
       document.getElementById("paragraph").textContent = currentPara;
     }
@@ -210,12 +213,12 @@
       }
 
       document.getElementById("result").textContent = resultText;
-      // localStorage removed - replaced by FirebasesetItem("user_" + mobile, JSON.stringify(user));
       document.getElementById("balance").textContent = user.balance;
 
+      // Save updated balance
+      db.ref("users/" + mobile + "/balance").set(user.balance);
+
       // Save result
-      const resultKey = "game_results_" + mobile;
-      const results = JSON.parse(// localStorage removed - replaced by FirebasegetItem(resultKey)) || [];
       const newResult = {
         game: "Typing Game",
         bet: bet,
@@ -224,8 +227,8 @@
         status: resultStatus,
         time: new Date().toLocaleString()
       };
-      results.unshift(newResult);
-      // localStorage removed - replaced by FirebasesetItem(resultKey, JSON.stringify(results));
+      const newKey = db.ref().child("game_results/" + mobile).push().key;
+      db.ref("game_results/" + mobile + "/" + newKey).set(newResult);
 
       setTimeout(() => {
         window.location.href = "dashboard.html";
@@ -243,8 +246,10 @@
       }, 1000);
     }
 
-    getRandomParagraph();
-    startTimer();
+    function startGame() {
+      getRandomParagraph();
+      startTimer();
+    }
   </script>
 </body>
 </html>
