@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Dashboard - SKILLSENA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
     body {
@@ -143,10 +143,10 @@
     }
   </style>
 
-  <!-- Firebase -->
+  <!-- ✅ Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
@@ -179,11 +179,10 @@
             document.getElementById("mobile").textContent = user.mobile;
             document.getElementById("balance").textContent = user.balance;
 
-            // ✅ Bonus popup
+            // ✅ Bonus Popup
             if (user.bonusMessage) {
               document.getElementById("bonusMessage").textContent = user.bonusMessage;
               document.getElementById("bonusPopup").style.display = "block";
-              // Optional: remove from DB or keep it shown once
             }
           }
         } else {
@@ -193,41 +192,42 @@
         }
       });
 
-      // ✅ Broadcast popup
+      // ✅ Broadcast Popup
       const bcRef = ref(db, "broadcast");
       get(bcRef).then((snap) => {
         if (snap.exists()) {
           const bc = snap.val();
-          document.getElementById("broadcastImg").src = bc.image;
-          document.getElementById("broadcastText").textContent = bc.message;
-          document.getElementById("broadcastPopup").style.display = "block";
+          if (bc.image && bc.image.startsWith("http")) {
+            document.getElementById("broadcastImg").src = bc.image;
+            document.getElementById("broadcastText").textContent = bc.message || "";
+            document.getElementById("broadcastPopup").style.display = "block";
+          }
         }
       });
     }
 
-    window.logout = function() {
+    window.logout = function () {
       localStorage.removeItem("loggedInUser");
       alert("Logged out.");
       window.location.href = "login.html";
-    }
+    };
 
-    window.closeBroadcast = function() {
+    window.closeBroadcast = function () {
       document.getElementById("broadcastPopup").style.display = "none";
-    }
+    };
 
-    window.closeBonus = function() {
+    window.closeBonus = function () {
       document.getElementById("bonusPopup").style.display = "none";
-    }
+    };
   </script>
 </head>
 <body>
   <div class="dashboard-box">
-    <img src="skillsena.png" alt="Skillsena Logo">
+    <img src="skillsena.png" alt="Skillsena Logo" />
     <h2>👋 Welcome, <span id="username">User</span></h2>
     <p class="info">📱 Mobile: <span id="mobile">---</span></p>
     <p class="info">💰 Coins: ₹<span id="balance">0</span></p>
-    <hr>
-
+    <hr />
     <a href="fast-math.html" class="btn btn-blue">🧮 Play Fast Math</a>
     <a href="typing-game.html" class="btn btn-blue">⌨ Play Typing Game</a>
     <a href="deposit.html" class="btn btn-blue">💸 Deposit</a>
