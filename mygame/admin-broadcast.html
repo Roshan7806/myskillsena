@@ -49,30 +49,28 @@
     button:hover {
       background-color: #0056b3;
     }
-
     .remove-btn {
       background-color: #dc3545;
       margin-top: 10px;
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
+  <!-- ✅ Firebase v8 Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
 </head>
 <body>
   <div class="container">
@@ -107,17 +105,28 @@
           image: imageData,
           time: new Date().toLocaleString()
         };
-        // localStorage removed - replaced by FirebasesetItem("broadcast_data", JSON.stringify(data));
-        // localStorage removed - replaced by FirebaseremoveItem("broadcast_closed");
-        alert("✅ Broadcast saved. Users will see it on login.");
+
+        firebase.database().ref("broadcast_data").set(data)
+          .then(() => {
+            alert("✅ Broadcast saved. Users will see it on login.");
+          })
+          .catch((error) => {
+            console.error("Error saving broadcast:", error);
+            alert("❌ Failed to save broadcast.");
+          });
       };
       reader.readAsDataURL(file);
     }
 
     function removeBroadcast() {
-      // localStorage removed - replaced by FirebaseremoveItem("broadcast_data");
-      // localStorage removed - replaced by FirebaseremoveItem("broadcast_closed");
-      alert("🧹 Broadcast removed successfully.");
+      firebase.database().ref("broadcast_data").remove()
+        .then(() => {
+          alert("🧹 Broadcast removed successfully.");
+        })
+        .catch((error) => {
+          console.error("Error removing broadcast:", error);
+          alert("❌ Failed to remove broadcast.");
+        });
     }
   </script>
 </body>
