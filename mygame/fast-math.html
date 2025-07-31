@@ -119,44 +119,51 @@
 
   <script>
     const mobile = sessionStorage.getItem("mobile");
-
     if (!mobile) {
       alert("Please login first.");
       window.location.href = "login.html";
     }
 
-    // ✅ CHECK IF GAME IS ENABLED BY ADMIN
-    firebase.database().ref("game_status_settings").once("value").then(snapshot => {
-      const settings = snapshot.val();
-      if (!settings || settings.fastMath !== "on") {
-        alert("❌ Fast Math Game is currently OFF by Admin!");
-        window.location.href = "dashboard.html";
-      }
-    });
+    const db = firebase.database();
 
-    const userRef = firebase.database().ref("users/" + mobile);
-    userRef.once("value")
+    // ⛔️ Check if fastMath game is ON or OFF
+    db.ref("game_status/fastMath").once("value")
       .then((snapshot) => {
-        if (!snapshot.exists()) {
-          alert("User not found.");
-          sessionStorage.clear();
-          window.location.href = "login.html";
+        const status = snapshot.val();
+        if (status !== "on") {
+          alert("❌ Fast Math Game is currently OFF!");
+          window.location.href = "dashboard.html";
         } else {
-          const user = snapshot.val();
-          document.getElementById("username").textContent = user.name || "User";
-          document.getElementById("balance").textContent = user.balance || 0;
+          // ✅ Game is ON, now load user info
+          db.ref("users/" + mobile).once("value")
+            .then((snapshot) => {
+              if (!snapshot.exists()) {
+                alert("User not found.");
+                sessionStorage.clear();
+                window.location.href = "login.html";
+              } else {
+                const user = snapshot.val();
+                document.getElementById("username").textContent = user.name || "User";
+                document.getElementById("balance").textContent = user.balance || 0;
+              }
+            })
+            .catch((error) => {
+              console.error("User load error:", error);
+              alert("Something went wrong. Try again.");
+              sessionStorage.clear();
+              window.location.href = "login.html";
+            });
         }
       })
       .catch((error) => {
-        console.error("Error getting user:", error);
-        alert("Something went wrong. Try again.");
-        sessionStorage.clear();
-        window.location.href = "login.html";
+        console.error("Game status check error:", error);
+        alert("Unable to verify game status. Try again.");
+        window.location.href = "dashboard.html";
       });
 
     function startGame() {
       const bet = parseInt(document.getElementById("bet").value);
-      const userRef = firebase.database().ref("users/" + mobile);
+      const userRef = db.ref("users/" + mobile);
 
       userRef.once("value")
         .then((snapshot) => {
