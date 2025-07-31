@@ -10,12 +10,18 @@
       margin: 0;
       padding: 0;
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #2b5876, #4e4376);
+      background: linear-gradient(270deg, #2b5876, #4e4376, #2b5876);
+      background-size: 600% 600%;
+      animation: gradientShift 15s ease infinite, fadeIn 1s ease;
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      animation: fadeIn 1s ease;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.95); }
@@ -23,15 +29,16 @@
     }
     .dashboard-box {
       background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
       border-radius: 20px;
       padding: 30px 20px;
       width: 90%;
       max-width: 420px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
       text-align: center;
       color: #fff;
-      animation: slideIn 0.7s ease;
+      animation: slideIn 0.8s ease;
+      position: relative;
     }
     @keyframes slideIn {
       from { transform: translateY(-30px); opacity: 0; }
@@ -40,14 +47,30 @@
     .dashboard-box img {
       width: 120px;
       margin-bottom: 15px;
-      animation: bounce 1s infinite alternate;
+      animation: bounce 1s infinite alternate, glowLogo 2s ease-in-out infinite;
     }
     @keyframes bounce {
       0% { transform: translateY(0); }
       100% { transform: translateY(-5px); }
     }
-    h2 { margin-bottom: 8px; font-size: 24px; font-weight: 600; }
-    .info { font-size: 15px; margin: 6px 0; }
+    @keyframes glowLogo {
+      0% { filter: drop-shadow(0 0 5px #00e6e6); }
+      100% { filter: drop-shadow(0 0 20px #00ffff); }
+    }
+    h2 {
+      margin-bottom: 8px;
+      font-size: 24px;
+      font-weight: 600;
+      animation: flicker 2s infinite alternate;
+    }
+    @keyframes flicker {
+      0% { text-shadow: 0 0 5px #0ff; }
+      100% { text-shadow: 0 0 15px #0ff, 0 0 25px #0ff; }
+    }
+    .info {
+      font-size: 15px;
+      margin: 6px 0;
+    }
     .btn {
       display: block;
       width: 100%;
@@ -58,8 +81,27 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      transition: 0.3s ease;
       text-decoration: none;
+      transition: 0.3s ease;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: rotate(45deg);
+      pointer-events: none;
+      animation: shine 3s infinite;
+    }
+    @keyframes shine {
+      0% { transform: rotate(45deg) translateX(-100%); }
+      100% { transform: rotate(45deg) translateX(100%); }
     }
     .btn-blue {
       background: linear-gradient(to right, #2193b0, #6dd5ed);
@@ -67,7 +109,8 @@
     }
     .btn-blue:hover {
       background: linear-gradient(to right, #6dd5ed, #2193b0);
-      transform: scale(1.03);
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #6dd5ed;
     }
     .btn-red {
       background: linear-gradient(to right, #ff416c, #ff4b2b);
@@ -75,80 +118,27 @@
     }
     .btn-red:hover {
       background: linear-gradient(to right, #ff4b2b, #ff416c);
-      transform: scale(1.03);
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #ff4b2b;
     }
-    hr { border: 0; border-top: 1px solid rgba(255,255,255,0.3); margin: 15px 0; }
-
-    /* ✅ Broadcast Popup */
-    #broadcastPopup {
-      display: none;
-      position: fixed;
-      top: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      color: black;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      z-index: 9999;
-      max-width: 90%;
-      text-align: center;
-      animation: fadeIn 0.5s ease;
-    }
-    #broadcastPopup img {
-      max-width: 100%;
-      border-radius: 10px;
-    }
-    #broadcastPopup p {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    #broadcastPopup button {
-      position: absolute;
-      top: 8px;
-      right: 10px;
-      background: red;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 50%;
-      cursor: pointer;
+    hr {
+      border: 0;
+      border-top: 1px solid rgba(255,255,255,0.3);
+      margin: 15px 0;
     }
 
-    /* ✅ Bonus Popup */
-    #bonusPopup {
-      display: none;
-      position: fixed;
-      top: 20%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      color: black;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-      z-index: 999;
-      max-width: 90%;
-      text-align: center;
+    #broadcastPopup, #bonusPopup {
+      animation: popupZoom 0.4s ease;
     }
-    #bonusPopup button {
-      margin-top: 10px;
-      padding: 8px 16px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+    @keyframes popupZoom {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
   </style>
 
-  <!-- ✅ Firebase (v8 style) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
   <script>
-    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
@@ -160,8 +150,6 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
-    // ✅ Login Check
     const mobile = localStorage.getItem("loggedInUser");
     if (!mobile) {
       alert("Please login first.");
@@ -178,8 +166,6 @@
             document.getElementById("username").textContent = user.name;
             document.getElementById("mobile").textContent = user.mobile;
             document.getElementById("balance").textContent = user.balance;
-
-            // ✅ Bonus Popup
             if (user.bonusMessage) {
               document.getElementById("bonusMessage").textContent = user.bonusMessage;
               document.getElementById("bonusPopup").style.display = "block";
@@ -191,8 +177,6 @@
           window.location.href = "login.html";
         }
       });
-
-      // ✅ Broadcast Popup
       firebase.database().ref("broadcast").once("value", snap => {
         if (snap.exists()) {
           const bc = snap.val();
@@ -204,23 +188,19 @@
         }
       });
     }
-
     function logout() {
       localStorage.removeItem("loggedInUser");
       alert("Logged out.");
       window.location.href = "login.html";
     }
-
     function closeBroadcast() {
       document.getElementById("broadcastPopup").style.display = "none";
     }
-
     function closeBonus() {
       document.getElementById("bonusPopup").style.display = "none";
     }
   </script>
 </head>
-
 <body>
   <div class="dashboard-box">
     <img src="skillsena.png" alt="Skillsena Logo" />
@@ -238,15 +218,11 @@
     <a href="security.html" class="btn btn-blue">🔐 Security</a>
     <button class="btn btn-red" onclick="logout()">🔓 Logout</button>
   </div>
-
-  <!-- ✅ Broadcast Popup -->
   <div id="broadcastPopup">
     <button onclick="closeBroadcast()">✖</button>
     <img id="broadcastImg" src="" />
     <p id="broadcastText"></p>
   </div>
-
-  <!-- ✅ Bonus Popup -->
   <div id="bonusPopup">
     <p id="bonusMessage"></p>
     <button onclick="closeBonus()">OK</button>
