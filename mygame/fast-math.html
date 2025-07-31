@@ -118,13 +118,21 @@
   </div>
 
   <script>
-    // ✅ Get mobile from sessionStorage
     const mobile = sessionStorage.getItem("mobile");
 
     if (!mobile) {
       alert("Please login first.");
       window.location.href = "login.html";
     }
+
+    // ✅ CHECK IF GAME IS ENABLED BY ADMIN
+    firebase.database().ref("game_status_settings").once("value").then(snapshot => {
+      const settings = snapshot.val();
+      if (!settings || settings.fastMath !== "on") {
+        alert("❌ Fast Math Game is currently OFF by Admin!");
+        window.location.href = "dashboard.html";
+      }
+    });
 
     const userRef = firebase.database().ref("users/" + mobile);
     userRef.once("value")
@@ -167,7 +175,6 @@
           userRef.update({ balance: newBalance });
 
           sessionStorage.setItem("current_bet", bet);
-
           window.location.href = "play-fast-math.html";
         })
         .catch((error) => {
