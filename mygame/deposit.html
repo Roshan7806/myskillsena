@@ -123,6 +123,7 @@
   </div>
 
   <script>
+    // Sync mobile number from localStorage if needed
     const storedMobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
     if (!storedMobile) {
       alert("❌ Please login first.");
@@ -131,6 +132,7 @@
     sessionStorage.setItem("mobile", storedMobile);
     const mobile = sessionStorage.getItem("mobile");
 
+    // Random QR selection
     const qrList = [
       { src: "images/qr1.png", weight: 0.2 },
       { src: "images/qr2.png", weight: 0.2 },
@@ -145,11 +147,11 @@
       }
       return qrList[0].src;
     }
-
     const qrImageSrc = pickRandomQR();
     const qrName = qrImageSrc.split('/').pop().replace('.png', '');
     document.getElementById("qrImage").src = qrImageSrc;
 
+    // Submit deposit request
     function submitDeposit() {
       const amount = parseInt(document.getElementById("amount").value);
       const txnId = document.getElementById("txnId").value.trim();
@@ -193,6 +195,7 @@
             document.getElementById("submitBtn").disabled = true;
             document.getElementById("submitBtn").innerText = "Submitted ✅";
             alert("✅ Deposit request submitted!");
+            showHistory(); // Update history after submit
           }).catch((err) => {
             console.error("Error:", err);
             alert("❌ Something went wrong. Try again.");
@@ -201,12 +204,12 @@
       });
     }
 
+    // Show deposit history (real-time)
     function showHistory() {
       const historyDiv = document.getElementById("depositHistory");
       const ref = db.ref("user_deposits/" + mobile);
 
-      ref.off(); // 🧹 Clear old listeners before attaching again
-
+      ref.off(); // Clear previous listener
       ref.on("value", (snap) => {
         historyDiv.innerHTML = "";
         if (!snap.exists()) {
@@ -215,7 +218,7 @@
         }
 
         const items = [];
-        snap.forEach(child => items.unshift(child.val())); // newest first
+        snap.forEach(child => items.unshift(child.val())); // latest first
 
         items.forEach(dep => {
           historyDiv.innerHTML += `
