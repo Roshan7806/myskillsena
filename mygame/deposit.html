@@ -123,16 +123,14 @@
   </div>
 
   <script>
-    // Fix: Ensure sessionStorage gets value if only localStorage has it
     const storedMobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
     if (!storedMobile) {
       alert("❌ Please login first.");
       window.location.href = "login.html";
     }
-    sessionStorage.setItem("mobile", storedMobile); // Sync back
+    sessionStorage.setItem("mobile", storedMobile);
     const mobile = sessionStorage.getItem("mobile");
 
-    // Random QR Picker
     const qrList = [
       { src: "images/qr1.png", weight: 0.2 },
       { src: "images/qr2.png", weight: 0.2 },
@@ -195,7 +193,6 @@
             document.getElementById("submitBtn").disabled = true;
             document.getElementById("submitBtn").innerText = "Submitted ✅";
             alert("✅ Deposit request submitted!");
-            showHistory(); // Refresh
           }).catch((err) => {
             console.error("Error:", err);
             alert("❌ Something went wrong. Try again.");
@@ -208,7 +205,7 @@
       const historyDiv = document.getElementById("depositHistory");
       const ref = db.ref("user_deposits/" + mobile);
 
-      ref.off(); // Remove old listeners before attaching new one
+      ref.off(); // 🧹 Clear old listeners before attaching again
 
       ref.on("value", (snap) => {
         historyDiv.innerHTML = "";
@@ -218,7 +215,7 @@
         }
 
         const items = [];
-        snap.forEach(child => items.unshift(child.val())); // Newest first
+        snap.forEach(child => items.unshift(child.val())); // newest first
 
         items.forEach(dep => {
           historyDiv.innerHTML += `
