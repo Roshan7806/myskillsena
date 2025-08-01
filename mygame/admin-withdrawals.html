@@ -47,7 +47,7 @@
     }
   </style>
 
-  <!-- Firebase Scripts (v8 for compatibility with initializeApp) -->
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
@@ -62,7 +62,7 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const db = firebase.database();
   </script>
 </head>
 <body>
@@ -74,7 +74,7 @@
   const container = document.getElementById("withdrawals");
 
   function loadWithdrawals() {
-    const ref = firebase.database().ref("withdrawal_requests");
+    const ref = db.ref("withdrawal_requests");
 
     ref.once("value", (snapshot) => {
       container.innerHTML = "";
@@ -109,8 +109,19 @@
           approve.textContent = "Approve ✅";
           approve.className = "approve";
           approve.onclick = () => {
-            firebase.database().ref("withdrawal_requests/" + requestId + "/status").set("Approved");
-            alert("Approved successfully");
+            const updates = {
+              status: "Approved"
+            };
+
+            // Update withdrawal_requests
+            db.ref("withdrawal_requests/" + requestId).update(updates);
+
+            // Update user_withdrawals/{mobile}/{requestId}
+            if (req.mobile) {
+              db.ref("user_withdrawals/" + req.mobile + "/" + requestId).update(updates);
+            }
+
+            alert("✅ Approved successfully");
             loadWithdrawals();
           };
 
@@ -123,8 +134,20 @@
               alert("Enter reason");
               return;
             }
-            firebase.database().ref("withdrawal_requests/" + requestId + "/status").set("Rejected - " + reason);
-            alert("Rejected successfully");
+
+            const updates = {
+              status: "Rejected - " + reason
+            };
+
+            // Update withdrawal_requests
+            db.ref("withdrawal_requests/" + requestId).update(updates);
+
+            // Update user_withdrawals/{mobile}/{requestId}
+            if (req.mobile) {
+              db.ref("user_withdrawals/" + req.mobile + "/" + requestId).update(updates);
+            }
+
+            alert("❌ Rejected successfully");
             loadWithdrawals();
           };
 
