@@ -123,7 +123,6 @@
   </div>
 
   <script>
-    // Sync mobile number from localStorage if needed
     const storedMobile = sessionStorage.getItem("mobile") || localStorage.getItem("loggedInUser");
     if (!storedMobile) {
       alert("❌ Please login first.");
@@ -132,7 +131,6 @@
     sessionStorage.setItem("mobile", storedMobile);
     const mobile = sessionStorage.getItem("mobile");
 
-    // Random QR selection
     const qrList = [
       { src: "images/qr1.png", weight: 0.2 },
       { src: "images/qr2.png", weight: 0.2 },
@@ -151,7 +149,6 @@
     const qrName = qrImageSrc.split('/').pop().replace('.png', '');
     document.getElementById("qrImage").src = qrImageSrc;
 
-    // Submit deposit request
     function submitDeposit() {
       const amount = parseInt(document.getElementById("amount").value);
       const txnId = document.getElementById("txnId").value.trim();
@@ -192,10 +189,20 @@
           const push2 = db.ref("user_deposits/" + mobile).push(newDeposit);
 
           Promise.all([push1, push2]).then(() => {
+            alert("✅ Deposit request submitted!");
             document.getElementById("submitBtn").disabled = true;
             document.getElementById("submitBtn").innerText = "Submitted ✅";
-            alert("✅ Deposit request submitted!");
-            showHistory(); // Update history after submit
+
+            // Reset fields
+            document.getElementById("txnId").value = "";
+            document.getElementById("utr").value = "";
+
+            // Refresh history
+            setTimeout(() => {
+              loadHistory();
+              document.getElementById("submitBtn").disabled = false;
+              document.getElementById("submitBtn").innerText = "Submit";
+            }, 1000);
           }).catch((err) => {
             console.error("Error:", err);
             alert("❌ Something went wrong. Try again.");
@@ -204,12 +211,11 @@
       });
     }
 
-    // Show deposit history (real-time)
-    function showHistory() {
+    function loadHistory() {
       const historyDiv = document.getElementById("depositHistory");
       const ref = db.ref("user_deposits/" + mobile);
+      ref.off(); // remove any existing listener
 
-      ref.off(); // Clear previous listener
       ref.on("value", (snap) => {
         historyDiv.innerHTML = "";
         if (!snap.exists()) {
@@ -218,9 +224,11 @@
         }
 
         const items = [];
-        snap.forEach(child => items.unshift(child.val())); // latest first
+        snap.forEach(child => {
+          items.push(child.val());
+        });
 
-        items.forEach(dep => {
+        items.reverse().forEach(dep => {
           historyDiv.innerHTML += `
             <div class="history-item">
               <div>Amount: ₹${dep.amount}</div>
@@ -235,7 +243,7 @@
       });
     }
 
-    window.onload = showHistory;
+    window.onload = loadHistory;
   </script>
 </body>
 </html>
