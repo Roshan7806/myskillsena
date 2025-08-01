@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Dashboard - SkillSena</title>
+
+  <!-- 🔒 Redirect if not logged in -->
+  <script>
+    if (sessionStorage.getItem("adminLoggedIn") !== "true") {
+      window.location.href = "admin-login.html";
+    }
+  </script>
+
   <style>
     * { box-sizing: border-box; }
     body {
