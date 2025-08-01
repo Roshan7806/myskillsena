@@ -41,59 +41,68 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
+  <!-- ✅ Firebase v8 Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    // ✅ Firebase Config
+    var firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
 
+    // ✅ Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    var database = firebase.database();
+  </script>
 </head>
 <body>
   <h2>📬 Contact Us Messages</h2>
   <div id="messagesContainer"></div>
 
   <script>
-    let messages = JSON.parse(// localStorage removed - replaced by FirebasegetItem("contact_messages")) || [];
+    const messagesContainer = document.getElementById("messagesContainer");
 
     function showMessages() {
-      const container = document.getElementById("messagesContainer");
-      container.innerHTML = "";
+      firebase.database().ref("contact_messages").on("value", function(snapshot) {
+        messagesContainer.innerHTML = "";
+        if (!snapshot.exists()) {
+          messagesContainer.innerHTML = "<p style='text-align:center;'>No messages found.</p>";
+          return;
+        }
 
-      if (messages.length === 0) {
-        container.innerHTML = "<p style='text-align:center;'>No messages found.</p>";
-        return;
-      }
+        snapshot.forEach(function(childSnapshot) {
+          const msg = childSnapshot.val();
+          const key = childSnapshot.key;
 
-      messages.forEach((msg, index) => {
-        const box = document.createElement("div");
-        box.className = "message-box";
-        box.innerHTML = `
-          <p><strong>👤 Name:</strong> ${msg.name}</p>
-          <p><strong>📱 Mobile:</strong> ${msg.mobile}</p>
-          <p><strong>💬 Message:</strong><br>${msg.message}</p>
-          <p><small>🕒 ${msg.time}</small></p>
-          <button class="delete-btn" onclick="deleteMessage(${index})">🗑 Delete</button>
-        `;
-        container.appendChild(box);
+          const box = document.createElement("div");
+          box.className = "message-box";
+          box.innerHTML = `
+            <p><strong>👤 Name:</strong> ${msg.name}</p>
+            <p><strong>📱 Mobile:</strong> ${msg.mobile}</p>
+            <p><strong>💬 Message:</strong><br>${msg.message}</p>
+            <p><small>🕒 ${msg.time}</small></p>
+            <button class="delete-btn" onclick="deleteMessage('${key}')">🗑 Delete</button>
+          `;
+          messagesContainer.appendChild(box);
+        });
       });
     }
 
-    function deleteMessage(index) {
+    function deleteMessage(key) {
       if (confirm("क्या आप यह मैसेज हटाना चाहते हैं?")) {
-        messages.splice(index, 1);
-        // localStorage removed - replaced by FirebasesetItem("contact_messages", JSON.stringify(messages));
-        showMessages(); // Refresh view
+        firebase.database().ref("contact_messages/" + key).remove()
+          .then(() => {
+            alert("Message deleted successfully");
+          })
+          .catch((error) => {
+            alert("Error deleting message: " + error);
+          });
       }
     }
 
