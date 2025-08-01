@@ -108,6 +108,10 @@
     db.ref("users/" + mobile).once("value", snapshot => {
       if (snapshot.exists()) {
         user = snapshot.val();
+        if (user.upi) {
+          document.getElementById("upi").value = user.upi;
+          document.getElementById("upi").readOnly = true;
+        }
         showHistory();
       } else {
         alert("User not found!");
@@ -140,7 +144,6 @@
         return;
       }
 
-      // Limit to 3 withdrawals in 24 hours
       db.ref("user_withdrawals/" + mobile).once("value", snapshot => {
         let withdraws = [];
         if (snapshot.exists()) {
@@ -159,7 +162,6 @@
           return;
         }
 
-        // Check or set UPI
         if (!user.upi) {
           db.ref("used_upis").once("value", uSnap => {
             const allUPIs = uSnap.val() || {};
@@ -170,16 +172,17 @@
 
             user.upi = upi;
             db.ref("used_upis/" + upi).set(mobile);
-            updateUserAndSubmit();
+            db.ref("users/" + mobile + "/upi").set(upi);
+            processWithdrawal();
           });
         } else if (user.upi !== upi) {
-          alert("You can't change your UPI once set.");
+          alert("You can't change your UPI once it's set.");
           return;
         } else {
-          updateUserAndSubmit();
+          processWithdrawal();
         }
 
-        function updateUserAndSubmit() {
+        function processWithdrawal() {
           const newBalance = user.balance - amount;
           db.ref("users/" + mobile + "/balance").set(newBalance);
 
@@ -197,7 +200,6 @@
 
           alert("Withdrawal request submitted. Coins deducted.");
           document.getElementById("amount").value = "";
-          document.getElementById("upi").value = "";
           document.getElementById("password").value = "";
           showHistory();
         }
