@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>User Status Manager</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -30,7 +30,7 @@
       padding: 16px;
       margin: 10px 0;
       border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -69,31 +69,35 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
-
+  <!-- Firebase v8 (since rest of project uses v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.appspot.com",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
 </head>
 <body>
   <h2>User Status Manager</h2>
 
-  <!-- ✅ Search Box -->
-  <input type="text" id="searchInput" placeholder="Search by mobile number..." onkeyup="filterUsers()">
+  <!-- Search Box -->
+  <input
+    type="text"
+    id="searchInput"
+    placeholder="Search by mobile number..."
+    onkeyup="filterUsers()"
+  />
 
-  <!-- ✅ User List -->
+  <!-- User List -->
   <div id="userList"></div>
 
   <script>
@@ -101,50 +105,61 @@
       const userList = document.getElementById("userList");
       userList.innerHTML = "";
 
-      const allKeys = Object.keys(localStorage);
-      const users = allKeys.filter(k => k.startsWith("user_"));
+      firebase.database().ref("users").once("value", (snapshot) => {
+        const users = snapshot.val();
+        if (!users) return;
 
-      users.forEach(key => {
-        const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem(key));
-        const mobile = user.mobile || key.replace("user_", "");
+        Object.keys(users).forEach((mobile) => {
+          const user = users[mobile];
+          const div = document.createElement("div");
+          div.className = "user-box";
+          div.setAttribute("data-mobile", mobile);
 
-        const div = document.createElement("div");
-        div.className = "user-box";
-        div.setAttribute("data-mobile", mobile);
-
-        div.innerHTML = `
-          <div class="user-info">
-            <span><strong>Name:</strong> ${user.name}</span>
-            <span><strong>Mobile:</strong> ${mobile}</span>
-            <span class="status"><strong>Status:</strong> ${user.status === "blocked" ? "❌ Blocked" : "✅ Active"}</span>
-          </div>
-          <button class="btn ${user.status === 'blocked' ? 'btn-unblock' : 'btn-block'}" onclick="toggleStatus('${mobile}')">
-            ${user.status === 'blocked' ? 'Unblock' : 'Block'}
-          </button>
-        `;
-        userList.appendChild(div);
+          div.innerHTML = `
+            <div class="user-info">
+              <span><strong>Name:</strong> ${user.name || "N/A"}</span>
+              <span><strong>Mobile:</strong> ${mobile}</span>
+              <span class="status"><strong>Status:</strong> ${
+                user.status === "blocked" ? "❌ Blocked" : "✅ Active"
+              }</span>
+            </div>
+            <button class="btn ${
+              user.status === "blocked" ? "btn-unblock" : "btn-block"
+            }" onclick="toggleStatus('${mobile}', ${
+            user.status === "blocked" ? "'unblock'" : "'block'"
+          })">
+              ${user.status === "blocked" ? "Unblock" : "Block"}
+            </button>
+          `;
+          userList.appendChild(div);
+        });
       });
     }
 
-    function toggleStatus(mobile) {
-      const user = JSON.parse(// localStorage removed - replaced by FirebasegetItem("user_" + mobile));
-      if (!user) return;
+    function toggleStatus(mobile, action) {
+      const userRef = firebase.database().ref("users/" + mobile);
+      userRef.once("value", (snapshot) => {
+        const user = snapshot.val();
+        if (!user) return;
 
-      if (user.status === "blocked") {
-        delete user.status; // remove block
-      } else {
-        user.status = "blocked"; // block
-      }
+        if (action === "block") {
+          userRef.update({ status: "blocked" });
+        } else if (action === "unblock") {
+          userRef.child("status").remove();
+        }
 
-      // localStorage removed - replaced by FirebasesetItem("user_" + mobile, JSON.stringify(user));
-      loadUsers();
+        // Refresh UI after update
+        setTimeout(() => {
+          loadUsers();
+        }, 500);
+      });
     }
 
     function filterUsers() {
       const input = document.getElementById("searchInput").value.toLowerCase();
       const users = document.querySelectorAll(".user-box");
 
-      users.forEach(user => {
+      users.forEach((user) => {
         const mobile = user.getAttribute("data-mobile").toLowerCase();
         if (mobile.includes(input)) {
           user.classList.remove("hidden");
@@ -154,6 +169,7 @@
       });
     }
 
+    // Initial load
     loadUsers();
   </script>
 </body>
