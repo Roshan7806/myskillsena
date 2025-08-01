@@ -65,23 +65,22 @@
     }
   </style>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
-    authDomain: "apnaskillsena.firebaseapp.com",
-    databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
-    projectId: "apnaskillsena",
-    storageBucket: "apnaskillsena.firebasestorage.app",
-    messagingSenderId: "149529300642",
-    appId: "1:149529300642:web:2e07cdea6e7933133491fb"
-  };
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-</script>
-
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
+      authDomain: "apnaskillsena.firebaseapp.com",
+      databaseURL: "https://apnaskillsena-default-rtdb.firebaseio.com",
+      projectId: "apnaskillsena",
+      storageBucket: "apnaskillsena.firebasestorage.app",
+      messagingSenderId: "149529300642",
+      appId: "1:149529300642:web:2e07cdea6e7933133491fb"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
 </head>
 <body>
 
@@ -103,7 +102,7 @@
         username === "Roshan@7806321" &&
         password === "prajapati@7806pandit#321"
       ) {
-        // localStorage removed - replaced by FirebasesetItem("adminLoggedIn", "true");
+        sessionStorage.setItem("adminLoggedIn", "true"); // ✅ Set session
         window.location.href = "admin-dashboard.html";
       } else {
         errorDiv.textContent = "❌ Invalid username or password!";
