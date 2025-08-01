@@ -107,6 +107,12 @@
           }
 
           const userData = snapshot.val();
+
+          if (userData.status && userData.status.toLowerCase() === "blocked") {
+            alert("❌ Your account is blocked by admin.");
+            return;
+          }
+
           if (userData.password !== password) {
             alert("❌ Incorrect password.");
             return;
@@ -115,7 +121,7 @@
           // ✅ Store login session
           localStorage.setItem("loggedInUser", mobile);
           localStorage.setItem("userId", userData.userId || "");
-          sessionStorage.setItem("mobile", mobile); // ✅
+          sessionStorage.setItem("mobile", mobile);
 
           alert("✅ Login successful!");
           window.location.href = "dashboard.html";
