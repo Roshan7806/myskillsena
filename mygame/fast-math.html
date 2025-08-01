@@ -126,37 +126,20 @@
     }
 
     const userRef = db.ref("users/" + mobile);
-    const gameStatusRef = db.ref("game_status/fastMath");
 
-    // 🛡️ Game ON/OFF Check
-    gameStatusRef.once("value", function(snapshot) {
-      const status = (snapshot.val() || "").toString().toLowerCase();
-
-      if (status !== "on") {
-        alert("❌ Fast Math Game is currently OFF!");
-        window.location.href = "dashboard.html";
-        return;
+    // ✅ Directly load user data (NO GAME STATUS CHECK)
+    userRef.once("value", function(userSnap) {
+      if (userSnap.exists()) {
+        const user = userSnap.val();
+        document.getElementById("username").textContent = user.name || "User";
+        document.getElementById("balance").textContent = user.balance || 0;
+      } else {
+        alert("User not found.");
+        window.location.href = "login.html";
       }
-
-      // ✅ Game is ON - Now get user data
-      userRef.once("value", function(userSnap) {
-        if (userSnap.exists()) {
-          const user = userSnap.val();
-          document.getElementById("username").textContent = user.name || "User";
-          document.getElementById("balance").textContent = user.balance || 0;
-        } else {
-          alert("User not found.");
-          window.location.href = "login.html";
-        }
-      }, function(error) {
-        console.error("User fetch error:", error);
-        alert("Error loading user.");
-        window.location.href = "dashboard.html";
-      });
-
     }, function(error) {
-      console.error("Game status check error:", error);
-      alert("Unable to load game status.");
+      console.error("User fetch error:", error);
+      alert("Error loading user.");
       window.location.href = "dashboard.html";
     });
 
