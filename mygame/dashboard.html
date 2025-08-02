@@ -88,13 +88,16 @@
   </style>
 </head>
 <body>
-  <div class="dashboard-container">
+  <div class="dashboard-container" id="dashboardContainer">
+    <!-- Broadcast image will be inserted here -->
+    
     <div class="profile-section">
       <img src="skillsena.png" alt="User Profile" />
       <h2 id="username">User</h2>
       <p id="mobile">📱 Mobile: ---</p>
       <p class="coins">💰 Coins: ₹<span id="balance">0</span></p>
     </div>
+
     <button class="menu-button" onclick="location.href='fast-math.html'">🧮 Play Fast Math</button>
     <button class="menu-button" onclick="location.href='typing-game.html'">⌨ Play Typing Game</button>
     <button class="menu-button" onclick="location.href='deposit.html'">💸 Deposit</button>
@@ -106,8 +109,10 @@
     <button class="menu-button logout-button" onclick="logout()">🔓 Logout</button>
   </div>
 
+  <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
@@ -120,6 +125,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     const mobile = localStorage.getItem("loggedInUser");
     if (!mobile) {
       alert("Please login first.");
@@ -144,11 +150,28 @@
         }
       });
     }
+
     function logout() {
       localStorage.removeItem("loggedInUser");
       alert("Logged out.");
       window.location.href = "login.html";
     }
+
+    // 🔥 Show broadcast image from Firebase
+    firebase.database().ref("broadcast/image").on("value", function(snapshot) {
+      const imageUrl = snapshot.val();
+      if (imageUrl) {
+        const img = document.createElement("img");
+        img.src = imageUrl;
+        img.style.width = "100%";
+        img.style.borderRadius = "15px";
+        img.style.marginBottom = "20px";
+        img.alt = "Broadcast Image";
+
+        const container = document.getElementById("dashboardContainer");
+        container.insertBefore(img, container.firstChild);
+      }
+    });
   </script>
 </body>
 </html>
