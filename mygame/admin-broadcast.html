@@ -94,7 +94,7 @@
       const file = fileInput.files[0];
 
       if (!msg || !file) {
-        alert("Please enter message and select an image.");
+        alert("⚠️ Please enter message and select an image.");
         return;
       }
 
@@ -118,7 +118,9 @@
 
             firebase.database().ref("broadcast_data").set(data)
               .then(() => {
-                alert("✅ Broadcast saved. Users will see it on login.");
+                alert("✅ Broadcast saved. It will appear on user dashboard.");
+                document.getElementById("message").value = "";
+                document.getElementById("image").value = "";
               })
               .catch((error) => {
                 console.error("Error saving broadcast:", error);
