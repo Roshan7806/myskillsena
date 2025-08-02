@@ -98,25 +98,23 @@
         return;
       }
 
-      const filename = Date.now() + "_" + file.name;
-      const storageRef = firebase.storage().ref("broadcast/" + filename);
+      const fileName = Date.now() + "_" + file.name;
+      const storageRef = firebase.storage().ref("broadcast/" + fileName);
       const uploadTask = storageRef.put(file);
 
-      uploadTask.on(
-        "state_changed",
+      uploadTask.on("state_changed",
         null,
-        function (error) {
+        function(error) {
           console.error("Image upload error:", error);
           alert("❌ Failed to upload image.");
         },
-        function () {
-          uploadTask.snapshot.ref.getDownloadURL().then(function (downloadURL) {
+        function() {
+          uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
             const data = {
               message: msg,
               image: downloadURL,
               time: new Date().toLocaleString()
             };
-
             firebase.database().ref("broadcast_data").set(data)
               .then(() => {
                 alert("✅ Broadcast saved successfully!");
@@ -127,6 +125,9 @@
                 console.error("Error saving broadcast:", error);
                 alert("❌ Failed to save broadcast.");
               });
+          }).catch(function(error) {
+            console.error("Get download URL error:", error);
+            alert("❌ Error getting download URL.");
           });
         }
       );
