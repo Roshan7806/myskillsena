@@ -2,62 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Broadcast</title>
+  <title>Broadcast System - Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #0e0f1a;
-      color: white;
+      font-family: 'Segoe UI', sans-serif;
       padding: 30px;
-      text-align: center;
+      background: #f4f6f9;
     }
     h2 {
-      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
     }
-    input[type="text"] {
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+    input, textarea {
+      width: 100%;
       padding: 10px;
-      width: 80%;
-      max-width: 400px;
-      border: none;
-      border-radius: 8px;
-      margin-bottom: 15px;
+      margin-top: 5px;
       font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
     button {
-      padding: 10px 20px;
-      background: #00c6ff;
-      border: none;
-      color: white;
-      border-radius: 8px;
+      margin-top: 20px;
+      padding: 12px;
       font-size: 16px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
     }
     button:hover {
-      background: #00aaff;
+      background-color: #0056b3;
     }
-    #status {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #00ffcc;
+    .remove-btn {
+      background-color: #dc3545;
+      margin-top: 10px;
     }
   </style>
-</head>
-<body>
 
-  <h2>Admin Broadcast Panel</h2>
-
-  <input type="text" id="imageUrl" placeholder="Enter Image URL" /><br />
-  <button onclick="saveBroadcast()">Save Broadcast</button>
-
-  <div id="status"></div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- ✅ Firebase v8 Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
   <script>
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDeStwcK3nJQdmLXtyWUZ52E30abBUAYBA",
       authDomain: "apnaskillsena.firebaseapp.com",
@@ -68,27 +71,77 @@
       appId: "1:149529300642:web:2e07cdea6e7933133491fb"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h2>📢 Broadcast Message</h2>
 
-    // Save function
+    <label>Message</label>
+    <textarea id="message" rows="4" placeholder="Festive wishes, offers, etc."></textarea>
+
+    <label>Upload Image</label>
+    <input type="file" id="image" accept="image/*" />
+
+    <button onclick="saveBroadcast()">✅ Save & Broadcast</button>
+    <button class="remove-btn" onclick="removeBroadcast()">🗑️ Remove Broadcast</button>
+  </div>
+
+  <script>
     function saveBroadcast() {
-      const url = document.getElementById("imageUrl").value.trim();
-      const status = document.getElementById("status");
+      const msg = document.getElementById("message").value.trim();
+      const fileInput = document.getElementById("image");
+      const file = fileInput.files[0];
 
-      if (!url) {
-        status.textContent = "Please enter a valid image URL.";
+      if (!msg || !file) {
+        alert("⚠️ Please enter message and select an image.");
         return;
       }
 
-      db.ref("broadcast/image").set(url, function(error) {
-        if (error) {
-          status.textContent = "❌ Error saving image: " + error.message;
-        } else {
-          status.textContent = "✅ Broadcast image saved successfully!";
+      const filename = Date.now() + "_" + file.name;
+      const storageRef = firebase.storage().ref("broadcast/" + filename);
+      const uploadTask = storageRef.put(file);
+
+      uploadTask.on(
+        "state_changed",
+        null,
+        function (error) {
+          console.error("Image upload error:", error);
+          alert("❌ Failed to upload image.");
+        },
+        function () {
+          uploadTask.snapshot.ref.getDownloadURL().then(function (downloadURL) {
+            const data = {
+              message: msg,
+              image: downloadURL,
+              time: new Date().toLocaleString()
+            };
+
+            firebase.database().ref("broadcast_data").set(data)
+              .then(() => {
+                alert("✅ Broadcast saved successfully!");
+                document.getElementById("message").value = "";
+                document.getElementById("image").value = "";
+              })
+              .catch((error) => {
+                console.error("Error saving broadcast:", error);
+                alert("❌ Failed to save broadcast.");
+              });
+          });
         }
-      });
+      );
+    }
+
+    function removeBroadcast() {
+      firebase.database().ref("broadcast_data").remove()
+        .then(() => {
+          alert("🧹 Broadcast removed successfully.");
+        })
+        .catch((error) => {
+          console.error("Error removing broadcast:", error);
+          alert("❌ Failed to remove broadcast.");
+        });
     }
   </script>
-
 </body>
 </html>
