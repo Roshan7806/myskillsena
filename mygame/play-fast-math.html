@@ -233,7 +233,7 @@
       document.querySelector("button").disabled = true;
       const resultBox = document.getElementById("result");
       let resultText = `✅ Correct: ${correctAnswers}/20\n`;
-      if (correctAnswers >= 15) {
+      if (correctAnswers >= 19) {
         const perCorrect = bet / 10;
         const winAmount = perCorrect * correctAnswers + bet;
         user.balance += winAmount;
