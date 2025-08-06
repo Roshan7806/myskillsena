@@ -203,7 +203,7 @@
       let resultStatus = "Loss";
       let resultText = `✅ Correct Words: ${totalCorrectWords}`;
 
-      if (totalCorrectWords >= 25) {
+      if (totalCorrectWords >= 40) {
         resultStatus = "Win";
         winCoins = bet + Math.floor((bet / 10) * totalCorrectWords);
         user.balance += winCoins;
