@@ -75,6 +75,38 @@
       margin-top: 20px;
       font-weight: bold;
     }
+    /* Warning Modal */
+    #warningModal {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      z-index: 1000;
+    }
+    #warningBox {
+      background: #ff4444;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+    }
+    #warningBox h3 {
+      margin-bottom: 10px;
+    }
+    #warningBox button {
+      margin-top: 15px;
+      background: yellow;
+      color: black;
+      padding: 10px 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
   </style>
 
   <!-- Firebase v8 Scripts -->
@@ -94,7 +126,17 @@
     const db = firebase.database();
   </script>
 </head>
-<body oncopy="return false" onpaste="return false">
+<body>
+  <!-- Warning Modal -->
+  <div id="warningModal">
+    <div id="warningBox">
+      <h3>⚠️ Warning!</h3>
+      <p>Game me koi bhi galat app, software, ya automation tool ka use mat karein.<br>
+      Aisa karne par aapka paisa nahi milega, withdrawal reject hoga aur ID suspend ho jayegi.</p>
+      <button onclick="startGameAfterWarning()">I Agree</button>
+    </div>
+  </div>
+
   <div class="top-bar">
     <div>👤 <span id="username">User</span></div>
     <div>💰 ₹<span id="balance">0</span></div>
@@ -104,7 +146,7 @@
     <h2>⌨️ Typing Challenge</h2>
     <div id="timer">⏱ Time Left: 60s</div>
     <div id="paragraph">Loading paragraph...</div>
-    <textarea id="typed" placeholder="Start typing here..." oninput="checkParagraph()"></textarea>
+    <textarea id="typed" placeholder="Start typing here..." onpaste="cheatingDetected()" oninput="checkParagraph()"></textarea>
     <button onclick="submitGame()">Submit</button>
     <div id="result"></div>
   </div>
@@ -124,6 +166,7 @@
     let totalCorrectWords = 0;
     let timer = 60;
     let interval;
+    let gameStarted = false;
 
     const paragraphs = [
       "Typing quickly is an important skill for students and professionals.",
@@ -157,8 +200,37 @@
       user = snapshot.val();
       document.getElementById("username").textContent = user.name || "User";
       document.getElementById("balance").textContent = user.balance || 0;
-      startGame();
     });
+
+    function startGameAfterWarning() {
+      document.getElementById("warningModal").style.display = "none";
+      startGame();
+      gameStarted = true;
+    }
+
+    function cheatingDetected() {
+      alert("Cheating detected! Game ended.");
+      db.ref("users/" + mobile + "/cheating").set(true);
+      window.location.href = "dashboard.html";
+    }
+
+    // Detect abnormal typing speed
+    let lastKeyTime = Date.now();
+    document.getElementById("typed").addEventListener("keydown", function() {
+      let now = Date.now();
+      if (now - lastKeyTime < 20) { // too fast typing
+        cheatingDetected();
+      }
+      lastKeyTime = now;
+    });
+
+    // Detect DevTools
+    setInterval(function() {
+      if (window.devtoolsOpen) cheatingDetected();
+      const widthThreshold = window.outerWidth - window.innerWidth > 160;
+      const heightThreshold = window.outerHeight - window.innerHeight > 160;
+      if (widthThreshold || heightThreshold) cheatingDetected();
+    }, 1000);
 
     function getRandomParagraph() {
       if (usedIndexes.length === paragraphs.length) usedIndexes = [];
@@ -182,6 +254,7 @@
     }
 
     function checkParagraph() {
+      if (!gameStarted) return;
       const typed = document.getElementById("typed").value.trim();
       const inputWords = typed.split(/\s+/);
       const originalWords = currentPara.trim().split(/\s+/);
